@@ -7,9 +7,8 @@ Next is the source. XP stores no positions and no applications: the list is fetc
 memory for a minute, and an application goes straight from the candidate's request to Next.
 
 > [!NOTE]
-> The library is not published yet. It was taken out of `xp-item-web`, whose branches still have a copy of the code
-> until the one that moves the app over to the library is merged. Until then, a change must be made in both places.
-> "Developing" below says how an app on the same machine uses the library before it is published.
+> The library was taken out of `xp-item-web`, whose branches still have a copy of the code until the one that moves
+> the app over to the library is merged. Until then, a change must be made in both places.
 
 ## What an app gets
 
@@ -28,11 +27,12 @@ In `build.gradle`:
 
 ```groovy
 dependencies {
-  include "no.item:lib-xp-next-jobs:0.1.0-SNAPSHOT"
+  include "no.item:lib-xp-next-jobs:0.1.0"
 }
 
 repositories {
   maven { url "https://repo.itemtest.no/releases" }
+  // For lib-xp-freemarker, which the library uses in a snapshot version
   maven { url "https://repo.itemtest.no/snapshots" }
 }
 ```
@@ -242,12 +242,27 @@ npm pack                         # The types package as a file, for an app on th
 Gradle needs Java 11 or newer. With the Enonic CLI installed, the JDK of an XP distribution works:
 `JAVA_HOME=~/.enonic/distributions/<distribution>/jdk`.
 
-An app on the same machine uses the library before it is published with `mavenLocal()` first in its repositories,
+An app on the same machine can use a change before it is released, with `mavenLocal()` first in its repositories
 and the packed file as the types package: `npm i -D ../lib-xp-next-jobs/item-enonic-types-lib-next-jobs-<version>.tgz`.
 Pack and install again after a change to the types, the stylesheets or the script of the form.
 
 The stylesheets are built for the browsers in `browserslist` in `package.json`. An app that imports them into its
 own bundle builds them for its own.
 
-Not here yet: tests, Storybook (the stories of the views are in `lib/next-jobs/views/*.stories.ts`, but nothing here
-runs them), and the workflows that publish the jar and the types package.
+Not here yet: tests, and Storybook (the stories of the views are in `lib/next-jobs/views/*.stories.ts`, but nothing
+here runs them).
+
+## Releasing
+
+A change that an app, an editor or a visitor will notice has a changeset (`npx changeset`). On `main`, the Publish
+workflow keeps a pull request named «Version Packages» open with the changesets it has found. Merging that pull
+request is the release: the workflow publishes the types package to npm (`@item-enonic-types/lib-next-jobs`), tags
+the version, makes the release on GitHub, and publishes the jar to `repo.itemtest.no/releases`
+(`no.item:lib-xp-next-jobs`). A version that is out is never overwritten.
+
+If the jar didn't go out for the version on `main`, run the Publish workflow by hand (_Actions → Publish → Run
+workflow_): that publishes the jar only.
+
+The workflow needs two things from outside the repository: the organization's secrets `REPOSILITE_USERNAME` and
+`REPOSILITE_PASSWORD`, and a trusted publisher for the package on npmjs.com that names this repository and
+`publish.yml`.

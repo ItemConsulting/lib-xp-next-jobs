@@ -1,8 +1,16 @@
 {
   "name": "@item-enonic-types/lib-next-jobs",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Types, stylesheets and the script of the form for lib-xp-next-jobs: job openings from Next on an Enonic XP site",
-  "license": "UNLICENSED",
+  "homepage": "https://github.com/ItemConsulting/lib-xp-next-jobs",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ItemConsulting/lib-xp-next-jobs.git"
+  },
   "files": [
     "dist",
     "tsconfig.json"
@@ -28,6 +36,7 @@
     "prepublish:generated": "mkdir -p dist && cp -R .xp-codegen/. dist",
     "prepublish:styles": "mkdir -p dist/styles && cp src/main/resources/lib/next-jobs/views/*.css dist/styles",
     "prepublish:script": "tsc -p src/main/resources/assets/tsconfig.json --noEmit false --declaration --target es2022 --module esnext --moduleResolution bundler --rootDir src/main/resources/assets --outDir dist/assets",
+    "release": "changeset publish",
     "versioning": "npx changeset version && npm i --package-lock-only && NEW_VERSION=$(node -p \"require('./package.json').version\") && sed -i \"s/^version.*/version = ${NEW_VERSION}/\" gradle.properties"
   },
   "devDependencies": {

@@ -93,4 +93,6 @@ src/main/resources/
 
 - Start from a new branch off `main`.
 - For anything bigger than a small fix, present a short plan before writing code.
-- Add a changeset for changes an app, an editor or a visitor will notice.
+- Add a changeset for changes an app, an editor or a visitor will notice. Merging the «Version Packages» pull
+  request on GitHub is what releases: never publish the jar or the types package from a developer's machine, and
+  never change `version` in `package.json` or `gradle.properties` by hand.

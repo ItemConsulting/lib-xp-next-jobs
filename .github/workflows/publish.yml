@@ -1,0 +1,112 @@
+name: Publish
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+  # Manual escape hatch: publish the jar for whatever version main is on, without going near npm.
+  # Use it when the Gradle step below failed, or never ran, for a version that should be out.
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write # push the version bump commit and the v<version> tag, create the release
+  pull-requests: write # open and update the "Version Packages" PR
+  id-token: write # mint the OIDC token npm trusted publishing authenticates with
+
+jobs:
+  publish:
+    # The `branches` filter above matches the head branch of the CI run, so a pull request opened
+    # from a fork's own `main` would pass it — and workflow_run always runs here, in this
+    # repository, with the secrets. Requiring the CI run to have come from a push closes that,
+    # since a fork cannot push to this repository.
+    # A manual run publishes whatever it has checked out, so it is only allowed from main.
+    if: >-
+      ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # changeset publish tags the release, so the existing tags have to be there
+          fetch-depth: 0
+          # The action pushes the release commit and tags over the GitHub API, so
+          # the checkout does not need to leave a git credential behind.
+          persist-credentials: false
+
+      # Newer than .nvmrc, which is the Node the build itself uses (Gradle downloads that one):
+      # npm trusted publishing needs the npm that comes with Node 24.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: "npm"
+
+      # Publishing the jar means building it, so the publish job needs the same JDK as CI
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - run: npm ci
+
+      # On an ordinary push to main this opens or updates the "Version Packages" PR.
+      # Once that PR is merged package.json is already bumped and there are no
+      # changesets left, so this runs `npm run release` instead: publish the types
+      # package to npm, push the v<version> tag and create the GitHub release.
+      #
+      # npm auth comes from trusted publishing: the npm CLI trades the OIDC token
+      # granted by `id-token: write` for a short-lived one, so there is no
+      # NODE_AUTH_TOKEN and no .npmrc here. The trusted publisher on npmjs.com pins
+      # this workflow by filename, so renaming publish.yml stops publishing until
+      # that is updated to match.
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        if: github.event_name != 'workflow_dispatch'
+        uses: changesets/action@v2
+        with:
+          version-script: npm run versioning
+          publish-script: npm run release
+          create-github-releases: true
+
+      # A release is never overwritten. After a "Version Packages" PR the jar is published unless
+      # a manual run already did it. A manual run for a version that is out has nothing to do, and
+      # says so.
+      - name: Check whether the jar is already published
+        id: jar
+        if: github.event_name == 'workflow_dispatch' || steps.changesets.outputs.published == 'true'
+        run: |
+          name=$(sed -n 's/^projectName *= *//p' gradle.properties)
+          version=$(sed -n 's/^version *= *//p' gradle.properties)
+          if [ -z "$name" ] || [ -z "$version" ]; then
+            echo "::error::Could not read projectName and version from gradle.properties"
+            exit 1
+          fi
+          url="https://repo.itemtest.no/releases/no/item/$name/$version/$name-$version.pom"
+          status=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+          if [ "$status" = "404" ]; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          elif [ "$status" = "200" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              echo "::error::$name $version is already published, refusing to overwrite it"
+              exit 1
+            fi
+            echo "::notice::$name $version is already published, leaving it as it is"
+          else
+            echo "::error::Unexpected HTTP $status from $url"
+            exit 1
+          fi
+
+      - name: Publish jar to repo.itemtest.no
+        if: steps.jar.outputs.exists == 'false'
+        run: ./gradlew publishAllPublicationsToItemtestRepositoryRepository
+        env:
+          # build.gradle declares the repository as `itemtestRepository` with
+          # credentials(PasswordCredentials), which reads these two properties.
+          ORG_GRADLE_PROJECT_itemtestRepositoryUsername: ${{ secrets.REPOSILITE_USERNAME }}
+          ORG_GRADLE_PROJECT_itemtestRepositoryPassword: ${{ secrets.REPOSILITE_PASSWORD }}

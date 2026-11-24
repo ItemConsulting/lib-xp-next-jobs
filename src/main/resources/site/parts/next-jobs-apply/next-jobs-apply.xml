@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<part xmlns="urn:enonic:xp:model:1.0">
+  <display-name i18n="part.next-jobs-apply.displayName">Application form from Next</display-name>
+  <description i18n="part.next-jobs-apply.description">The application form from Next for the position that is open in the job list on the page. The application is sent on to Next and not stored here</description>
+
+  <form>
+    <!-- Next owns the fields, the privacy text and the file limits. Only the presentation is set here -->
+    <input name="heading" type="TextLine">
+      <label i18n="part.next-jobs-apply.heading">Heading</label>
+      <help-text i18n="part.next-jobs-apply.heading.helpText">The heading on the form. Empty gives «Søknad»</help-text>
+      <occurrences minimum="0" maximum="1"/>
+    </input>
+
+    <input name="text" type="TextArea">
+      <label i18n="part.next-jobs-apply.text">Text above the form</label>
+      <help-text i18n="part.next-jobs-apply.text.helpText">Plain text. Line breaks are kept</help-text>
+      <occurrences minimum="0" maximum="1"/>
+    </input>
+
+    <input name="receipt" type="TextArea">
+      <label i18n="part.next-jobs-apply.receipt">Receipt text</label>
+      <help-text i18n="part.next-jobs-apply.receipt.helpText">Shown after the application is sent, in place of the standard text</help-text>
+      <occurrences minimum="0" maximum="1"/>
+    </input>
+
+    <input name="surface" type="RadioButton">
+      <label i18n="part.next-jobs-apply.surface">Background</label>
+      <help-text i18n="part.next-jobs-apply.surface.helpText">The panel behind the fields</help-text>
+      <occurrences minimum="0" maximum="1"/>
+      <config>
+        <option value="grey" i18n="part.next-jobs-apply.surface.grey">Grey panels</option>
+        <option value="white" i18n="part.next-jobs-apply.surface.white">White panels</option>
+        <option value="plain" i18n="part.next-jobs-apply.surface.plain">No panels</option>
+      </config>
+      <default>grey</default>
+    </input>
+  </form>
+</part>

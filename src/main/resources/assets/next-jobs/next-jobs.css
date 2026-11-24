@@ -1,0 +1,8 @@
+/*
+ * The look of the list of positions and the application form from /lib/next-jobs, as one stylesheet. The parts
+ * load it on their own; a site with a stylesheet of its own can import this file into it instead
+ */
+
+@import url("../../lib/next-jobs/views/button.css");
+@import url("../../lib/next-jobs/views/job-list.css");
+@import url("../../lib/next-jobs/views/job-apply.css");

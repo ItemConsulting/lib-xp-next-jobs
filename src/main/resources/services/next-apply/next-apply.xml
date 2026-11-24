@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service>
+  <display-name>Next application</display-name>
+  <description>Forwards an application from the job posting to Next, without storing it</description>
+</service>

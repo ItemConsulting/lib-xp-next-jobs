@@ -1,0 +1,16 @@
+{
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "./**/*.d.ts"
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "lib": [
+      "DOM",
+      "es2023"
+    ],
+    "skipLibCheck": true
+  }
+}

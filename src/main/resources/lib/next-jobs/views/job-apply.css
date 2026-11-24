@@ -1,0 +1,986 @@
+/* The application form for one position: the CV step and the form, each on a card as in Next */
+
+.next-jobs-apply {
+  /*
+   * The colors of the job list, which the form follows: what a site can set (--next-jobs--*, see
+   * /lib/next-jobs/design.ts) in the admin tool or in its own stylesheet. The values here are the look when it has
+   * set nothing: change the colors and the corners together with DEFAULT_DESIGN there
+   */
+  --next-jobs-form--brand: var(--next-jobs--brand, #1e293b);
+  --next-jobs-form--ink: var(--next-jobs--ink, #111827);
+  --next-jobs-form--muted: var(--next-jobs--muted, #4b5563);
+  --next-jobs-form--accent: var(--next-jobs--accent, #1d4ed8);
+  --next-jobs-form--focus: var(--next-jobs--focus, #1d4ed8);
+  --next-jobs-form--error: #b42318;
+  --next-jobs-form--border: color-mix(in srgb, var(--next-jobs-form--ink) 22%, transparent);
+  --next-jobs-form--soft: color-mix(in srgb, var(--next-jobs-form--accent) 6%, transparent);
+  --next-jobs-form--button: var(--next-jobs--button, #1d4ed8);
+  --next-jobs-form--button-text: var(--next-jobs--button-text, #ffffff);
+  --next-jobs-form--radius: var(--next-jobs--card-radius, 12px);
+
+  /* The space between the cards */
+  --next-jobs-form--space: var(--next-jobs--space, 1.25rem);
+
+  /* The sizes of the fields in Next's form (--text-base, --text-sm, --text-xs, --control-h-md, --radius-sm) */
+  --next-jobs-form--text: 15px;
+  --next-jobs-form--text-sm: 0.8125rem;
+  --next-jobs-form--text-xs: 12px;
+  --next-jobs-form--control-height: 44px;
+  --next-jobs-form--control-radius: var(--next-jobs--control-radius, 8px);
+
+  /* The panel behind the fields. The editor can choose white, or none */
+  --next-jobs-form--card-background: #f8f8f8;
+  --next-jobs-form--card-border: color-mix(in srgb, var(--next-jobs-form--brand) 20%, #ffffff);
+  --next-jobs-form--card-padding: 24px;
+
+  /* The font of the text: the page's own unless the site has set one */
+  font-family: var(--next-jobs--font-text, inherit);
+}
+
+.next-jobs-apply--surface-white {
+  --next-jobs-form--card-background: #ffffff;
+}
+
+/* No panel: the fields stand straight on the page */
+
+.next-jobs-apply--surface-plain {
+  --next-jobs-form--card-background: transparent;
+  --next-jobs-form--card-border: transparent;
+  --next-jobs-form--card-padding: 0;
+}
+
+/* The same edge as the job list: --next-jobs--side is the space at the sides of one that goes out to the edges of the page */
+
+.next-jobs-apply--inner {
+  width: min(100% - var(--next-jobs--side, 0px) * 2, var(--next-jobs--max-width, 1200px));
+  margin-inline: auto;
+}
+
+/* Only shown to editors, outside live mode */
+
+.next-jobs-apply--notice {
+  margin-block: 0;
+  padding: 12px 16px;
+  border: 1px dashed currentcolor;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.next-jobs-apply--notice + .next-jobs-apply--inner {
+  margin-top: var(--next-jobs-form--space);
+}
+
+/*
+ * As wide as the text of the posting. The redirect after sending lands here: a site with a menu that stays at the
+ * top sets --next-jobs--scroll-offset, so the heading stops below it
+ */
+
+.next-jobs-apply--application {
+  display: flex;
+  flex-direction: column;
+  gap: var(--next-jobs-form--space);
+  width: 100%;
+  max-width: 750px;
+  scroll-margin-top: var(--next-jobs--scroll-offset, 1.25rem);
+  container-type: inline-size;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+/* The editor's text above the form, with its line breaks */
+
+.next-jobs-apply--text {
+  margin: 0;
+  white-space: pre-line;
+}
+
+/* The editor's own receipt text keeps its line breaks */
+
+.next-jobs-form--pre-line {
+  white-space: pre-line;
+}
+
+.next-jobs-form--link {
+  color: var(--next-jobs-form--accent);
+}
+
+/* Where a button stands. How it looks is in button.css, or in the site's own class */
+
+.next-jobs-form--button {
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.next-jobs-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--next-jobs-form--space);
+
+  &[aria-busy="true"] {
+    cursor: progress;
+  }
+}
+
+.next-jobs-form--card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--next-jobs-form--card-padding);
+  border: 1px solid var(--next-jobs-form--card-border);
+  border-radius: var(--next-jobs-form--radius);
+
+  /* A light grey panel unless the editor chose otherwise, so the white fields stand out */
+  background-color: var(--next-jobs-form--card-background);
+  color: var(--next-jobs-form--ink);
+  gap: 18px;
+
+  > * {
+    margin: 0;
+  }
+}
+
+/* «Les hele stillingsbeskrivelsen»: the same panel as the cards, closed until someone opens it */
+
+.next-jobs-form--more {
+  padding: 0 var(--next-jobs-form--card-padding);
+  border: 1px solid var(--next-jobs-form--card-border);
+  border-radius: var(--next-jobs-form--radius);
+  background-color: var(--next-jobs-form--card-background);
+  color: var(--next-jobs-form--ink);
+}
+
+.next-jobs-form--more-summary {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  list-style: none;
+  font-weight: 500;
+  color: var(--next-jobs-form--accent);
+  cursor: pointer;
+  gap: 12px;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  /* A chevron that points right when closed and down when open */
+
+  &::before {
+    content: "";
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentcolor;
+    border-bottom: 2px solid currentcolor;
+    rotate: -45deg;
+    transition: rotate 0.2s ease;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    border-radius: 6px;
+    outline: 2px solid var(--next-jobs-form--focus);
+    outline-offset: 2px;
+  }
+}
+
+.next-jobs-form--more[open] > .next-jobs-form--more-summary::before {
+  rotate: 45deg;
+}
+
+/* The formatted description from Next: paragraphs and lists, with bold and italic */
+
+.next-jobs-form--rich {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 20px;
+  line-height: 1.6;
+  gap: 12px;
+
+  > * {
+    margin: 0;
+  }
+
+  ul,
+  ol {
+    padding-left: 1.25em;
+  }
+
+  /* A line break inside a paragraph or a list item comes as a newline in the text */
+
+  p,
+  li {
+    white-space: pre-line;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .next-jobs-form--more-summary::before {
+    transition: none;
+  }
+}
+
+.next-jobs-form--heading {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.next-jobs-form--intro,
+.next-jobs-form--note,
+.next-jobs-form--help {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--next-jobs-form--muted);
+}
+
+.next-jobs-form--help {
+  font-size: var(--next-jobs-form--text-xs);
+}
+
+/* Two columns, as in Next. The wide fields go over both */
+
+.next-jobs-form--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 16px;
+}
+
+.next-jobs-form--wide {
+  grid-column: 1 / -1;
+}
+
+.next-jobs-form--field,
+.next-jobs-form--rows {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  gap: 6px;
+}
+
+.next-jobs-form--label {
+  padding: 0;
+  font-size: var(--next-jobs-form--text-sm);
+  font-weight: 500;
+}
+
+.next-jobs-form--input,
+.next-jobs-form--select,
+.next-jobs-form--tags {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--next-jobs-form--control-height);
+  padding: 0 16px;
+  border: 1px solid var(--next-jobs-form--border);
+  border-radius: var(--next-jobs-form--control-radius);
+  background-color: #ffffff;
+  font: inherit;
+  font-size: var(--next-jobs-form--text);
+  color: var(--next-jobs-form--ink);
+
+  &[aria-invalid="true"] {
+    border-color: var(--next-jobs-form--error);
+  }
+}
+
+textarea.next-jobs-form--input {
+  resize: vertical;
+  line-height: 1.55;
+  padding-block: 12px;
+}
+
+/* Smaller in Next: the month and year in the rows */
+
+.next-jobs-form--select {
+  padding-inline: 8px;
+  font-size: var(--next-jobs-form--text-sm);
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+/* The CV step: the choice of reader, what it means, and the place to drop the file */
+
+.next-jobs-form--readers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  gap: 12px;
+
+  legend {
+    float: left;
+  }
+}
+
+.next-jobs-form--switch {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--next-jobs-form--ink) 7%, transparent);
+  gap: 2px;
+}
+
+/* The radio buttons stay in the page for the keyboard and screen readers; the labels are the switch */
+
+.next-jobs-form--switch-input {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.next-jobs-form--switch-label {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: var(--next-jobs-form--muted);
+  cursor: pointer;
+}
+
+.next-jobs-form--switch-input:checked + .next-jobs-form--switch-label {
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--next-jobs-form--ink) 15%, transparent);
+  background-color: #ffffff;
+  color: var(--next-jobs-form--ink);
+}
+
+.next-jobs-form--switch-input:focus-visible + .next-jobs-form--switch-label {
+  outline: 2px solid var(--next-jobs-form--focus);
+  outline-offset: 2px;
+}
+
+/* The choice not taken shows that it can be clicked */
+
+.next-jobs-form--switch-input:not(:checked) + .next-jobs-form--switch-label:hover {
+  background-color: rgb(255 255 255 / 60%);
+  color: var(--next-jobs-form--ink);
+}
+
+.next-jobs-form--reader-text {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background-color: color-mix(in srgb, var(--next-jobs-form--brand) 8%, transparent);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+  }
+}
+
+.next-jobs-form--reader-heading {
+  font-weight: 600;
+}
+
+.next-jobs-form--drop {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 16px;
+  border: 1px dashed var(--next-jobs-form--accent);
+  border-radius: 12px;
+  background-color: var(--next-jobs-form--soft);
+  gap: 14px;
+
+  &:focus-within {
+    outline: 2px solid var(--next-jobs-form--focus);
+    outline-offset: 2px;
+  }
+}
+
+.next-jobs-form--drop-over {
+  background-color: color-mix(in srgb, var(--next-jobs-form--accent) 14%, transparent);
+}
+
+.next-jobs-form--drop-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--next-jobs-form--accent) 12%, transparent);
+  color: var(--next-jobs-form--accent);
+}
+
+.next-jobs-form--drop-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.next-jobs-form--drop-file {
+  overflow-wrap: anywhere;
+}
+
+/* The invitation, kept for screen readers once the file name is shown */
+
+.next-jobs-form--drop-chosen [data-drop-choose] {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.next-jobs-form--drop-button {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border: 1px solid var(--next-jobs-form--border);
+  border-radius: 999px;
+  background-color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/*
+ * While the CV is read: Next's mark in place of the icon, and what happens in
+ * place of the choice. The mark and its movement are from LogoSpinner.tsx and
+ * app.css in Next (measured from logo-loop.json there): four chevrons that
+ * march to the right in a seamless two-second loop. The colors are the mark's
+ * light ones, since the panel is light in both themes.
+ */
+
+.next-jobs-form--spinner,
+.next-jobs-form--drop-wait {
+  display: none;
+}
+
+.next-jobs-form--spinner {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.next-jobs-form--spinner-plate {
+  fill: #0b020a;
+}
+
+.next-jobs-form--spinner-out,
+.next-jobs-form--spinner-in {
+  fill: #02fbed;
+}
+
+.next-jobs-form--spinner-step,
+.next-jobs-form--spinner-in-late {
+  fill: #a041e8;
+}
+
+.next-jobs-form--drop-wait {
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+
+  > p {
+    margin: 0;
+  }
+}
+
+.next-jobs-form--drop-wait-title {
+  font-size: var(--next-jobs-form--text-sm);
+  font-weight: 500;
+}
+
+[aria-busy="true"] {
+
+  .next-jobs-form--drop {
+    border-style: solid;
+    cursor: progress;
+  }
+
+  .next-jobs-form--spinner,
+  .next-jobs-form--drop-wait {
+    display: flex;
+  }
+
+  .next-jobs-form--drop-icon,
+  .next-jobs-form--drop-text,
+  .next-jobs-form--drop-button {
+    display: none;
+  }
+}
+
+/* White under the pointer, as the fields are, but not while the CV is read */
+
+.next-jobs-form--drop:hover {
+  background-color: #ffffff;
+}
+
+[aria-busy="true"] .next-jobs-form--drop:hover {
+  background-color: var(--next-jobs-form--soft);
+}
+
+.next-jobs-form--spinner-out,
+.next-jobs-form--spinner-step,
+.next-jobs-form--spinner-in,
+.next-jobs-form--spinner-in-late {
+  animation-duration: 2s;
+  animation-timing-function: cubic-bezier(0.5, 0, 0.22, 1);
+  animation-iteration-count: infinite;
+}
+
+.next-jobs-form--spinner-out {
+  animation-name: next-jobs-form-spinner-out;
+}
+
+.next-jobs-form--spinner-step {
+  animation-name: next-jobs-form-spinner-step;
+}
+
+.next-jobs-form--spinner-in {
+  animation-name: next-jobs-form-spinner-in;
+}
+
+.next-jobs-form--spinner-in-late {
+  animation-name: next-jobs-form-spinner-in-late;
+}
+
+/* The translateX values are the x positions in Next's animation file, not offsets */
+
+@keyframes next-jobs-form-spinner-out {
+
+  0%,
+  20% {
+    transform: translateX(236px);
+  }
+
+  41.667%,
+  100% {
+    transform: translateX(470px);
+  }
+}
+
+@keyframes next-jobs-form-spinner-step {
+
+  0%,
+  25% {
+    transform: translateX(94px);
+  }
+
+  45%,
+  70% {
+    transform: translateX(236px);
+  }
+
+  91.667%,
+  100% {
+    transform: translateX(470px);
+  }
+}
+
+@keyframes next-jobs-form-spinner-in {
+
+  0%,
+  30% {
+    transform: translateX(-170px);
+  }
+
+  48.333%,
+  75% {
+    transform: translateX(94px);
+  }
+
+  95%,
+  100% {
+    transform: translateX(236px);
+  }
+}
+
+@keyframes next-jobs-form-spinner-in-late {
+
+  0%,
+  80% {
+    transform: translateX(-170px);
+  }
+
+  98.333%,
+  100% {
+    transform: translateX(94px);
+  }
+}
+
+/* With less motion the mark stands still as the logo, and the chevrons breathe instead, as in Next */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .next-jobs-form--spinner-out {
+    transform: translateX(236px);
+    animation: next-jobs-form-spinner-breathe 2.4s ease-in-out infinite;
+  }
+
+  .next-jobs-form--spinner-step {
+    transform: translateX(94px);
+    animation: next-jobs-form-spinner-breathe 2.4s ease-in-out 0.3s infinite;
+  }
+
+  .next-jobs-form--spinner-in,
+  .next-jobs-form--spinner-in-late {
+    transform: translateX(-170px);
+    animation: none;
+  }
+}
+
+@keyframes next-jobs-form-spinner-breathe {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Forced colors would paint the mark as one block: keep the chevrons apart */
+
+@media (forced-colors: active) {
+
+  .next-jobs-form--spinner-plate {
+    fill: Canvas;
+    stroke: CanvasText;
+    stroke-width: 8;
+  }
+
+  .next-jobs-form--spinner-out,
+  .next-jobs-form--spinner-in {
+    fill: Highlight;
+  }
+
+  .next-jobs-form--spinner-step,
+  .next-jobs-form--spinner-in-late {
+    fill: CanvasText;
+  }
+}
+
+/* The real file input lies over the whole box, so a click anywhere opens it */
+
+.next-jobs-form--drop-input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  inset: 0;
+}
+
+.next-jobs-form--cv-status {
+  font-size: var(--next-jobs-form--text-sm);
+  font-weight: 500;
+
+  &:empty {
+    display: none;
+  }
+
+  /* Green when it went well, as in Next. Darker than Next's #0e9f6e, which is too light for small text on the grey panel */
+
+  &[data-state="filled"] {
+    color: #047857;
+  }
+}
+
+/* While reading, the drop zone says it; the status stays for screen readers only */
+
+[aria-busy="true"] .next-jobs-form--cv-status {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Work and education: one framed row each, the two fields on top and the period below */
+
+.next-jobs-form--row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.next-jobs-form--row {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: var(--next-jobs-form--soft);
+  gap: 10px;
+}
+
+.next-jobs-form--row-top {
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.next-jobs-form--period {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  gap: 8px 16px;
+}
+
+.next-jobs-form--period-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .next-jobs-form--select {
+    width: auto;
+  }
+}
+
+.next-jobs-form--period-label {
+  color: var(--next-jobs-form--muted);
+}
+
+.next-jobs-form--ongoing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.next-jobs-form--remove,
+.next-jobs-form--tag-remove {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  line-height: 1;
+  color: var(--next-jobs-form--muted);
+  cursor: pointer;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--next-jobs-form--ink) 8%, transparent);
+    color: var(--next-jobs-form--ink);
+  }
+}
+
+.next-jobs-form--add {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--next-jobs-form--ink) 6%, transparent);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--next-jobs-form--ink);
+  cursor: pointer;
+
+  &::before {
+    content: "+ " / "";
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--next-jobs-form--ink) 10%, transparent);
+  }
+}
+
+/* Tags: the values in a row, with the text field last */
+
+.next-jobs-form--tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-block: 4px;
+  gap: 6px;
+
+  &:focus-within {
+    outline: 2px solid var(--next-jobs-form--focus);
+    outline-offset: 2px;
+  }
+}
+
+.next-jobs-form--tag-list {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.next-jobs-form--tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px 2px 10px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--next-jobs-form--accent) 10%, transparent);
+  font-size: 0.8125rem;
+  gap: 2px;
+}
+
+.next-jobs-form--tag-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--next-jobs-form--text-sm);
+  color: inherit;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.next-jobs-form--error {
+  margin: 0;
+  font-size: var(--next-jobs-form--text-sm);
+  font-weight: 500;
+  color: var(--next-jobs-form--error);
+}
+
+/* The talent pool, on a soft surface as in Next */
+
+.next-jobs-form--check {
+  display: flex;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--next-jobs-form--accent) 20%, transparent);
+  border-radius: 12px;
+  background-color: var(--next-jobs-form--soft);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  gap: 10px;
+
+  input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 3px;
+  }
+
+  /* White under the pointer, as the CV drop zone is */
+
+  &:hover {
+    background-color: #ffffff;
+  }
+}
+
+/* The bot check: out of sight and out of reach, but not display:none, which bots skip */
+
+.next-jobs-form--trap {
+  position: absolute;
+  left: -10000px;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+}
+
+.next-jobs-form--privacy {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--next-jobs-form--muted);
+}
+
+.next-jobs-form--notices:empty {
+  display: none;
+}
+
+.next-jobs-form--notice {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--next-jobs-form--error);
+  border-radius: 4px;
+  background-color: rgb(180 35 24 / 6%);
+}
+
+/* The button that sends, across the card. Under the pointer it only gets darker, whatever the site's own button does */
+
+.next-jobs-form--submit {
+  align-self: stretch;
+  justify-content: center;
+  margin-top: 0;
+  text-align: center;
+  cursor: pointer;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--next-jobs-form--button) 82%, black);
+    color: var(--next-jobs-form--button-text);
+    text-decoration: none;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+}
+
+/* The same focus ring as the links on the cards */
+
+.next-jobs-form--input:focus-visible,
+.next-jobs-form--select:focus-visible,
+.next-jobs-form--file:focus-visible,
+.next-jobs-form--check input:focus-visible,
+.next-jobs-form--ongoing input:focus-visible,
+.next-jobs-form--add:focus-visible,
+.next-jobs-form--remove:focus-visible,
+.next-jobs-form--tag-remove:focus-visible {
+  outline: 2px solid var(--next-jobs-form--focus);
+  outline-offset: 2px;
+}
+
+.next-jobs-form--receipt {
+  padding: 16px 20px;
+  border-left: 4px solid var(--next-jobs-form--brand);
+  border-radius: 4px;
+  background-color: color-mix(in srgb, var(--next-jobs-form--brand) 6%, transparent);
+
+  /* The size of the text in the fields */
+  font-size: var(--next-jobs-form--text);
+}
+
+/* One column on a phone, and the row fields under each other */
+
+@container (width <= 560px) {
+
+  .next-jobs-form--card {
+    --next-jobs-form--card-padding: 18px 16px;
+  }
+
+  /* Without the panel there is nothing to pad */
+
+  .next-jobs-apply--surface-plain .next-jobs-form--card {
+    --next-jobs-form--card-padding: 0;
+  }
+
+  .next-jobs-form--grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .next-jobs-form--row-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    .next-jobs-form--input:nth-child(2) {
+      grid-row: 2;
+    }
+  }
+
+  .next-jobs-form--drop {
+    flex-wrap: wrap;
+  }
+}

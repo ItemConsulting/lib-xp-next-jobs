@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service>
+  <display-name>Next CV reading</display-name>
+  <description>Sends a CV to Next to be read and returns the draft of the form fields, without storing it</description>
+</service>

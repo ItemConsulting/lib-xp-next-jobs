@@ -1,0 +1,30 @@
+{
+  "include": [
+    "./**/*.ts",
+    "../../../.xp-codegen/**/*.d.ts"
+  ],
+  "exclude": [
+    "**/*.d.ts",
+    "assets/**/*.*",
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rootDirs": [
+      ".",
+      "../../../.xp-codegen",
+    ],
+    "paths": {
+      "/lib/enonic/asset": ["../../../node_modules/@enonic-types/lib-asset"],
+      "/lib/xp/*": ["../../../node_modules/@enonic-types/lib-*"],
+      "/lib/*": ["../../../src/main/resources/lib/*", "../../../node_modules/@item-enonic-types/lib-*"],
+      "/*": ["../../../src/main/resources/*", "../../../.xp-codegen/*"]
+    },
+    "lib": ["ES2015"],
+    "skipLibCheck": true,
+    "types": [
+      "@enonic-types/global",
+    ]
+  },
+}

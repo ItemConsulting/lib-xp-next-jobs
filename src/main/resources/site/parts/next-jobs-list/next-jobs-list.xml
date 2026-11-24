@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<part xmlns="urn:enonic:xp:model:1.0">
+  <display-name i18n="part.next-jobs-list.displayName">Job openings from Next</display-name>
+  <description i18n="part.next-jobs-list.description">The published job openings from Next, and the posting of the one that is opened. Add the «Application form from Next» part to the page to take applications here</description>
+
+  <form>
+    <!-- What is set in the admin tool goes before the three fields here, on every page with the list -->
+    <input name="title" type="TextLine">
+      <label i18n="part.next-jobs-list.title">Heading</label>
+      <help-text i18n="part.next-jobs-list.title.helpText">A heading set in the admin tool for Next is shown instead of this one</help-text>
+      <occurrences minimum="1" maximum="1"/>
+      <default>Ledige stillinger</default>
+    </input>
+
+    <input name="showCount" type="CheckBox">
+      <label i18n="part.next-jobs-list.showCount">Show the number of openings</label>
+      <help-text i18n="part.next-jobs-list.showCount.helpText">«4 ledige stillinger» as the first line under the heading. A choice in the admin tool for Next goes before this one</help-text>
+      <default>checked</default>
+    </input>
+
+    <input name="text" type="TextArea">
+      <label i18n="part.next-jobs-list.text">Text under the heading</label>
+      <help-text i18n="part.next-jobs-list.text.helpText">Plain text. Line breaks are kept. A text set in the admin tool for Next is shown instead of this one</help-text>
+      <occurrences minimum="0" maximum="1"/>
+    </input>
+
+    <input name="pageHeading" type="CheckBox">
+      <label i18n="part.next-jobs-list.pageHeading">The heading of the page</label>
+      <help-text i18n="part.next-jobs-list.pageHeading.helpText">Check when the page has no heading above the list: the heading here becomes the main heading of the page</help-text>
+    </input>
+  </form>
+</part>

@@ -1,0 +1,111 @@
+plugins {
+  id "java"
+  id "maven-publish"
+  id "com.enonic.xp.base" version "3.6.1"
+  id "com.github.node-gradle.node" version "7.1.0"
+  id "no.item.xp.codegen" version "2.8.0"
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+dependencies {
+  // The libraries the code calls at runtime. They are published as dependencies of the jar, and an app's `include`
+  // is transitive, so an app that includes this library gets them without listing them
+  implementation "com.enonic.xp:lib-auth:${xpVersion}"
+  implementation "com.enonic.xp:lib-content:${xpVersion}"
+  implementation "com.enonic.xp:lib-context:${xpVersion}"
+  implementation "com.enonic.xp:lib-i18n:${xpVersion}"
+  implementation "com.enonic.xp:lib-node:${xpVersion}"
+  implementation "com.enonic.xp:lib-portal:${xpVersion}"
+  implementation "com.enonic.xp:lib-repo:${xpVersion}"
+  implementation "com.enonic.lib:lib-http-client:3.2.2"
+  implementation "com.enonic.lib:lib-asset:1.0.3"
+  implementation "no.item:lib-xp-freemarker:3.0.0-SNAPSHOT"
+  implementation "no.item:lib-xp-time:1.2.1"
+}
+
+repositories {
+  mavenCentral()
+  xp.enonicRepo()
+  maven { url "https://repo.itemtest.no/releases" }
+  maven { url "https://repo.itemtest.no/snapshots" }
+}
+
+node {
+  download = true
+  version = "22.15.1"
+}
+
+tasks.withType(Copy).configureEach {
+  includeEmptyDirs = false
+}
+
+tasks.register("npmCheck", NpmTask) {
+  dependsOn npmInstall
+  dependsOn generateTypeScript
+  args = [
+    "run",
+    "check"
+  ]
+  environment = [
+    "FORCE_COLOR": "true",
+  ]
+}
+
+check.dependsOn npmCheck
+
+tasks.register("npmBuild", NpmTask) {
+  args = [
+    "run",
+    "--silent",
+    project.hasProperty("dev") || project.hasProperty("development") ? "build" : "minify"
+  ]
+  dependsOn npmInstall
+  dependsOn generateTypeScript
+  environment = [
+    "FORCE_COLOR": "true",
+    "LOG_LEVEL_FROM_GRADLE": gradle.startParameter.logLevel.toString(),
+    "NODE_ENV": project.hasProperty("dev") || project.hasProperty("development") ? "development" : "production"
+  ]
+  inputs.dir "src/main/resources"
+  outputs.dir "build/resources/main"
+}
+
+jar.dependsOn npmBuild
+
+// The scripts are compiled by npmBuild. The sources, and the stylesheets the bundle is made from, stay out of the jar
+processResources {
+  exclude "**/.gitkeep"
+  exclude "**/*.json"
+  exclude "**/*.ts"
+  exclude "lib/**/*.css"
+  exclude "assets/next-jobs/next-jobs.css"
+}
+
+jar {
+  // Compiled from files that only hold types
+  exclude "**/*.freemarker.js"
+  exclude "lib/next-jobs/types.js"
+}
+
+publishing {
+  repositories {
+    maven {
+      name = "itemtestRepository"
+      url = "https://repo.itemtest.no/releases"
+      credentials(PasswordCredentials)
+      authentication {
+        basic(BasicAuthentication)
+      }
+    }
+  }
+  publications {
+    maven(MavenPublication) {
+      from components.java
+      groupId group
+      artifactId projectName
+      version version
+    }
+  }
+}

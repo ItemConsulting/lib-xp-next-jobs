@@ -1,0 +1,32 @@
+/*
+ * The button of the list and the form, for a site that hands in no class of its own (`buttonClass`). The color is
+ * the one a site can set in the admin tool (--next-jobs--button), and the text on it is white or dark, whichever
+ * is easier to read
+ */
+
+.next-jobs-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 24px;
+  border: 0;
+  border-radius: var(--next-jobs--control-radius, 8px);
+  background-color: var(--next-jobs--button, #1d4ed8);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--next-jobs--button-text, #ffffff);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--next-jobs--button, #1d4ed8) 82%, black);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--next-jobs--focus, #1d4ed8);
+    outline-offset: 2px;
+  }
+}

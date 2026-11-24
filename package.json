@@ -1,6 +1,6 @@
 {
   "name": "@item-enonic-types/lib-next-jobs",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Types, stylesheets and the script of the form for lib-xp-next-jobs: job openings from Next on an Enonic XP site",
   "homepage": "https://github.com/ItemConsulting/lib-xp-next-jobs",
   "license": "MIT",

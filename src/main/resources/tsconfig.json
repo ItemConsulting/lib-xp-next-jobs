@@ -5,6 +5,7 @@
   ],
   "exclude": [
     "**/*.d.ts",
+    "**/*.stories.ts",
     "assets/**/*.*",
   ],
   "compilerOptions": {

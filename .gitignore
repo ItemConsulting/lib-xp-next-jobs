@@ -122,3 +122,6 @@ ARCHITECTURE.md
 
 ### The types package ###
 dist/
+
+### The types package, packed to try it in an app on the same machine (npm pack) ###
+*.tgz

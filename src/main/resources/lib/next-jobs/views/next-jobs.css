@@ -1,0 +1,8 @@
+/*
+ * The look of the list of positions and the application form, as one stylesheet. The bundle the parts load is made
+ * from it, and a site with a stylesheet of its own imports it from the types package (dist/styles/next-jobs.css)
+ */
+
+@import url("button.css");
+@import url("job-list.css");
+@import url("job-apply.css");

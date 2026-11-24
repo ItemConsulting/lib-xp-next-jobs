@@ -7,8 +7,9 @@ Next is the source. XP stores no positions and no applications: the list is fetc
 memory for a minute, and an application goes straight from the candidate's request to Next.
 
 > [!NOTE]
-> The library is not published yet. It was taken out of `xp-item-web`, which still has a copy of the code. Until the
-> app is moved over to the library, a change must be made in both places.
+> The library is not published yet. It was taken out of `xp-item-web`, whose branches still have a copy of the code
+> until the one that moves the app over to the library is merged. Until then, a change must be made in both places.
+> "Developing" below says how an app on the same machine uses the library before it is published.
 
 ## What an app gets
 
@@ -39,14 +40,17 @@ repositories {
 The libraries it calls (`lib-portal`, `lib-content`, `lib-node`, `lib-repo`, `lib-auth`, `lib-context`, `lib-i18n`,
 `lib-http-client`, `lib-asset`, `lib-xp-freemarker`, `lib-xp-time`) come with it.
 
-For the types, add `@item-enonic-types/lib-next-jobs` to `devDependencies` and its folder to the paths of the server
-`tsconfig.json`:
+For the types, add `@item-enonic-types/lib-next-jobs` to `devDependencies` and a path of its own to the server
+`tsconfig.json`, before a more general `/lib/*`:
 
 ```json
 "paths": {
-  "/*": ["./*", "../../../node_modules/@item-enonic-types/lib-next-jobs/dist/*"]
+  "/lib/next-jobs/*": ["../../../node_modules/@item-enonic-types/lib-next-jobs/dist/lib/next-jobs/*"]
 }
 ```
+
+The package also has the stylesheets of the views and the script of the form, for an app that builds them into
+bundles of its own (see "From a component of the app's own").
 
 ## Setting up
 
@@ -169,9 +173,24 @@ const form = renderJobApply({ req, locale: "no", rootClass: "my-job-form", butto
 image or an animation, the app's view imports the macro in `lib/next-jobs/views/job-list-macro.ftlh`, puts its markup
 between the tags, and is drawn with the model from `getJobListModel()`.
 
-An app with its own bundles can leave out the parts' assets: import the stylesheets from the types package
-(`dist/styles/button.css`, `job-list.css`, `job-apply.css`) and load `assets/next-jobs/next-jobs.mjs`, which defines
-`<next-jobs-form>`.
+A component of the app's own doesn't bring the stylesheet and the script along, as the parts do. Either add
+`getPageContributions()` from `/lib/next-jobs/views/assets` to the response of the page, or build the two into the
+app's own bundles from the types package:
+
+```css
+@import url("@item-enonic-types/lib-next-jobs/dist/styles/next-jobs.css");
+```
+
+```ts
+import NextJobsForm from "@item-enonic-types/lib-next-jobs/dist/assets/next-jobs/form";
+
+if (!window.customElements.get("next-jobs-form")) {
+  window.customElements.define("next-jobs-form", NextJobsForm);
+}
+```
+
+`next-jobs.css` is `button.css`, `job-list.css` and `job-apply.css` in the same folder: leave out `button.css` when
+the app hands in a button class of its own.
 
 ## The look
 
@@ -217,9 +236,18 @@ npm run check                    # ESLint, Stylelint and the type checks
 ./gradlew build                  # The jar, in build/libs/
 ./gradlew publishToMavenLocal    # To ~/.m2, for an app on the same machine (add mavenLocal() to its repositories)
 npm run prepublishOnly           # The types package, in dist/
+npm pack                         # The types package as a file, for an app on the same machine
 ```
 
 Gradle needs Java 11 or newer. With the Enonic CLI installed, the JDK of an XP distribution works:
 `JAVA_HOME=~/.enonic/distributions/<distribution>/jdk`.
 
-Not here yet: tests, Storybook for the views, and the workflows that publish the jar and the types package.
+An app on the same machine uses the library before it is published with `mavenLocal()` first in its repositories,
+and the packed file as the types package: `npm i -D ../lib-xp-next-jobs/item-enonic-types-lib-next-jobs-<version>.tgz`.
+Pack and install again after a change to the types, the stylesheets or the script of the form.
+
+The stylesheets are built for the browsers in `browserslist` in `package.json`. An app that imports them into its
+own bundle builds them for its own.
+
+Not here yet: tests, Storybook (the stories of the views are in `lib/next-jobs/views/*.stories.ts`, but nothing here
+runs them), and the workflows that publish the jar and the types package.

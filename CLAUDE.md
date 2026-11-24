@@ -9,8 +9,8 @@ recruitment system: the list of positions, the posting, the application form and
 an app uses it. Server code is TypeScript compiled with tsup and run by XP's JavaScript engine (Nashorn: no `Intl`,
 no browser APIs on the server). Views are FreeMarker.
 
-It was taken out of `ItemConsulting/xp-item-web`, which still has a copy under the same paths until that app is moved
-over to the library. Until then, make a change in both places.
+It was taken out of `ItemConsulting/xp-item-web`, whose branches still have a copy under the same paths until the
+one that moves the app over to the library is merged. Until then, make a change in both places.
 
 ## Versions
 
@@ -25,7 +25,8 @@ over to the library. Until then, make a change in both places.
 npm run check                    # ESLint + Stylelint + type check (server and assets)
 ./gradlew build                  # The jar, in build/libs/
 ./gradlew publishToMavenLocal    # To ~/.m2, to try the library in an app on the same machine
-npm run prepublishOnly           # The types package, in dist/
+npm run prepublishOnly           # The types package, in dist/: types, the views' stylesheets, the form's script
+npm pack                         # The types package as a file, to try it in an app on the same machine
 ```
 
 Run `npm run check` before you say a change is done. Prettier requires LF line endings.
@@ -37,7 +38,8 @@ src/main/resources/
   lib/next-jobs/             client.ts and apply.ts call Next. settings.ts stores what a site has set. site.ts
                              finds the site of a request. design.ts is the look a site can set. types.ts mirrors
                              Next's contract
-  lib/next-jobs/views/       The list, the posting and the form: model (.ts), view (.ftlh), stylesheet (.css)
+  lib/next-jobs/views/       The list, the posting and the form: model (.ts), view (.ftlh), stylesheet (.css) and
+                             story (.stories.ts, which nothing here runs yet). next-jobs.css is all the stylesheets
   lib/next-jobs/admin/       The admin tool: tool.ts and tool.ftlh, and who gets in (access.ts)
   site/parts/next-jobs-*/    The two parts: a descriptor and a thin controller around the views
   services/next-apply/       Forwards an application to Next

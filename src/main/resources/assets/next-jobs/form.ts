@@ -53,6 +53,8 @@ const TEXT_KEYS = [
   "summary",
 ] as const;
 const TAG_KEYS = ["skills", "languages", "certifications"] as const;
+/** What the candidate fills in, in a field: where an error is marked, and where the focus goes */
+const FIELD_INPUT = "input:not([type=hidden]), textarea, select";
 /** «Jobber her nå» and «Pågår», as Next writes it */
 const ONGOING = "nå";
 
@@ -138,8 +140,15 @@ export default class NextJobsForm extends HTMLElement {
         if (row) {
           this.updatePeriods(row);
         }
-      } else if (input.getAttribute("aria-invalid") === "true" && input.value.trim() !== "") {
-        this.clearFieldError(input.closest<HTMLElement>("[data-field]"));
+      } else {
+        // An answer where one was missing takes the message away. For a group of options, any of them answers
+        const container = input.closest<HTMLElement>("[data-field]");
+        const answered =
+          input.type === "checkbox" || input.type === "radio" ? input.checked : input.value.trim() !== "";
+
+        if (answered && container?.querySelector("[aria-invalid='true']")) {
+          this.clearFieldError(container);
+        }
       }
     };
 
@@ -290,7 +299,7 @@ export default class NextJobsForm extends HTMLElement {
       const container = form.querySelector<HTMLElement>(`[data-field="${CSS.escape(answer.field)}"]`);
 
       this.setFieldError(container, message ?? "");
-      container?.querySelector<HTMLElement>("input:not([type=hidden]), textarea")?.focus();
+      container?.querySelector<HTMLElement>(FIELD_INPUT)?.focus();
     }
   }
 
@@ -716,7 +725,7 @@ export default class NextJobsForm extends HTMLElement {
   /* ------------------------------ Errors --------------------------------- */
 
   setFieldError(container: HTMLElement | null, message: string, errorElement?: HTMLElement | null): void {
-    const input = container?.querySelector<HTMLElement>("input:not([type=hidden]), textarea");
+    const input = container?.querySelector<HTMLElement>(FIELD_INPUT);
     const error = errorElement ?? findError(container, input);
 
     if (error) {
@@ -728,8 +737,7 @@ export default class NextJobsForm extends HTMLElement {
   }
 
   clearFieldError(container: HTMLElement | null, errorElement?: HTMLElement | null): void {
-    const error =
-      errorElement ?? findError(container, container?.querySelector<HTMLElement>("input:not([type=hidden]), textarea"));
+    const error = errorElement ?? findError(container, container?.querySelector<HTMLElement>(FIELD_INPUT));
 
     if (error) {
       error.textContent = "";

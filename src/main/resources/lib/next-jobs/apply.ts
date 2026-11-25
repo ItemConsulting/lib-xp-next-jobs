@@ -323,9 +323,16 @@ function parseCustomField(raw: unknown): SiteApplyCustomField | undefined {
     min: type === "number" ? finite(raw.min) : undefined,
     max: type === "number" ? finite(raw.max) : undefined,
     integer: type === "number" ? raw.integer === true : undefined,
+    minDate: type === "date" ? day(raw.minDate) : undefined,
+    maxDate: type === "date" ? day(raw.maxDate) : undefined,
     maxLength: positive(raw.maxLength),
     maxItems: type === "list" ? positive(raw.maxItems) : undefined,
   };
+}
+
+/** A date as Next writes it. Anything else is left out, so it never reaches an attribute */
+function day(value: unknown): string | undefined {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
 }
 
 function finite(value: unknown): number | undefined {

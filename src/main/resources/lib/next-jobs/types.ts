@@ -181,6 +181,9 @@ export interface SiteApplyCustomField {
   min?: number;
   max?: number;
   integer?: boolean;
+  /** For `date`: the first and the last day Next takes, `YYYY-MM-DD`. A date outside counts as no answer */
+  minDate?: string;
+  maxDate?: string;
   /** For `text` and `longtext`: the longest answer. For `list`: the longest value */
   maxLength?: number;
   /** For `list`: the most values */

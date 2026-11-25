@@ -408,8 +408,8 @@ function getCustomField(field: SiteApplyCustomField, language: ApplyLanguage): J
         step: field.integer ? "1" : "any",
       };
     case "date":
-      // The browser's own date field. It sends YYYY-MM-DD, which is what Next takes
-      return { ...common, kind: "date" };
+      // The browser's own date field. It sends YYYY-MM-DD, which is what Next takes, and holds the limits
+      return { ...common, kind: "date", min: field.minDate, max: field.maxDate };
     case "select":
       return { ...common, kind: "select", options };
     case "radio":

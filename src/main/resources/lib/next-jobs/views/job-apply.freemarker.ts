@@ -150,7 +150,7 @@ export type JobApplyField = {
   options?: { value: string; label: string }[];
   /** For `text` and `textarea` */
   maxlength?: number;
-  /** For `number`: the limits as text, and `1` or `any` */
+  /** For `number`: the limits as text, and `1` or `any`. For `date`: the first and the last day, without `step` */
   min?: string;
   max?: string;
   step?: string;

@@ -244,6 +244,7 @@ const CUSTOM_TYPES: SiteApplyCustomFieldType[] = [
   "text",
   "number",
   "longtext",
+  "date",
   "radio",
   "select",
   "checkbox",

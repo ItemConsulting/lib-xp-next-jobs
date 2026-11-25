@@ -113,8 +113,9 @@ export type JobApplyField = {
   /** For the id attributes: the key, with only letters, digits, - and _ */
   id: string;
   /**
-   * `heading` is the heading of a section, not a field. `number`, `select`,
-   * `radio`, `multi` and `checkbox` are only used by the tenant's own fields
+   * `heading` is the heading of a section, not a field. `number`, `date`,
+   * `select`, `radio`, `multi` and `checkbox` are only used by the tenant's
+   * own fields
    */
   kind:
     | "text"
@@ -125,6 +126,7 @@ export type JobApplyField = {
     | "rows"
     | "tags"
     | "number"
+    | "date"
     | "select"
     | "radio"
     | "multi"

@@ -8,7 +8,15 @@ import { isEnglish } from "../dates";
 import { APPLICATION_ANCHOR, DETAIL_PARAM, FIELD_PARAM, OUTCOME_PARAM, firstValue, getRequestedId } from "../page";
 import { getCurrentSiteKey } from "../site";
 import { phrase } from "./phrases";
-import type { SiteApplyForm, SiteCvReadSetup, SitePosition, SiteRichRun, SiteRichText } from "../types";
+import type {
+  SiteApplyCustomField,
+  SiteApplyForm,
+  SiteApplySectionKey,
+  SiteCvReadSetup,
+  SitePosition,
+  SiteRichRun,
+  SiteRichText,
+} from "../types";
 import type {
   JobApplication,
   JobApplyField,
@@ -197,6 +205,7 @@ function getApplyFormModel(
   const fields: JobApplyField[] = [
     {
       key: "name",
+      id: "name",
       kind: "text",
       label: phrase(language, "jobApply.field.name"),
       required: true,
@@ -205,6 +214,7 @@ function getApplyFormModel(
     },
     {
       key: "email",
+      id: "email",
       kind: "email",
       label: phrase(language, "jobApply.field.email"),
       required: true,
@@ -213,7 +223,21 @@ function getApplyFormModel(
     },
   ];
 
-  form.fields.forEach((field) => fields.push(getField(field.key, field.required, language)));
+  // Section by section, as in Next: the fixed fields, then the tenant's own. A Next from before the sections has no
+  // field of the tenant's own, and its fixed fields all count as the first section
+  SECTIONS.forEach((section) => {
+    const own = form.customFields.filter((field) => field.section === section);
+
+    // The position's own questions get Next's heading, so they aren't read as part of the fields above
+    if (section === "position" && own.length > 0) {
+      fields.push(getHeading(form.sections.filter((known) => known.key === "position")[0]?.title, language));
+    }
+
+    form.fields
+      .filter((field) => (field.section ?? "about") === section)
+      .forEach((field) => fields.push(getField(field.key, field.required, language)));
+    own.forEach((field) => fields.push(getCustomField(field, language)));
+  });
 
   const extensions = form.cv.extensions;
   const megabytes = getMegabytes(form.cv.maxBytes, language);
@@ -233,6 +257,8 @@ function getApplyFormModel(
     startedAt: String(Date.now()),
     requiredNote: phrase(language, "jobApply.requiredNote"),
     fields,
+    hasCustomFields: form.customFields.length > 0,
+    chooseLabel: phrase(language, "jobApply.field.choose"),
     cv: {
       label: phrase(language, "jobApply.cv.label"),
       help: cvRule,
@@ -294,7 +320,7 @@ function getFieldMessage(
 /** The labels are this library's, the same as Next uses. The two-by-two lines follow Next's form */
 function getField(key: string, required: boolean, language: ApplyLanguage): JobApplyField {
   const label = phrase(language, `jobApply.field.${key}`);
-  const common = { key, label, required, wide: false };
+  const common = { key, id: key, label, required, wide: false };
 
   switch (key) {
     case "phone":
@@ -338,6 +364,75 @@ function getField(key: string, required: boolean, language: ApplyLanguage): JobA
         removeTag: phrase(language, "jobApply.field.tags.remove"),
       };
   }
+}
+
+const SECTIONS: SiteApplySectionKey[] = ["about", "experience", "skills", "position"];
+
+function getHeading(title: string | undefined, language: ApplyLanguage): JobApplyField {
+  return {
+    key: "position",
+    id: "position",
+    kind: "heading",
+    label: title ?? phrase(language, "jobApply.section.position"),
+    required: false,
+    wide: true,
+  };
+}
+
+/**
+ * A field the tenant has added in Next. The label, the help text and the
+ * options are Next's, as plain text. The key is the name Next takes, `cf.<id>`,
+ * which is also what Next names when the answer is missing
+ */
+function getCustomField(field: SiteApplyCustomField, language: ApplyLanguage): JobApplyField {
+  const common = {
+    key: field.name,
+    id: field.name.replace(/[^\w-]/g, "-"),
+    label: field.label,
+    required: field.required,
+    help: field.help,
+    wide: false,
+  };
+  const options = (field.options ?? []).map((option) => ({ value: option.id, label: option.label }));
+
+  switch (field.type) {
+    case "longtext":
+      return { ...common, kind: "textarea", wide: true, maxlength: field.maxLength };
+    case "number":
+      return {
+        ...common,
+        kind: "number",
+        inputmode: field.integer ? "numeric" : "decimal",
+        min: field.min !== undefined ? String(field.min) : undefined,
+        max: field.max !== undefined ? String(field.max) : undefined,
+        step: field.integer ? "1" : "any",
+      };
+    case "select":
+      return { ...common, kind: "select", options };
+    case "radio":
+      return { ...common, kind: "radio", wide: true, options };
+    case "multi":
+      return { ...common, kind: "multi", wide: true, options };
+    case "checkbox":
+      return { ...common, kind: "checkbox", wide: true };
+    case "list":
+      // Tags with the script, a comma list without it, as the fixed lists. Next takes both
+      return {
+        ...common,
+        kind: "tags",
+        wide: true,
+        help: withHelp(field.help, phrase(language, "jobApply.field.tags.help")),
+        tagsHelp: withHelp(field.help, phrase(language, "jobApply.field.tags.helpScript")),
+        removeTag: phrase(language, "jobApply.field.tags.remove"),
+      };
+    default:
+      return { ...common, kind: "text", maxlength: field.maxLength };
+  }
+}
+
+/** The tenant's help text first, then how the list is filled in */
+function withHelp(help: string | undefined, rule: string): string {
+  return help ? `${help} ${rule}` : rule;
 }
 
 function getRow(language: ApplyLanguage, names: string[], ongoingKey: string): JobApplyField["row"] {

@@ -71,8 +71,16 @@ export type JobApplyForm = {
   /** Epoch millis as text, set on the server when the form was drawn. Next's bot check */
   startedAt: string;
   requiredNote: string;
-  /** Name and email first, then the fields from Next in its order */
+  /**
+   * Name and email first, then the fields from Next in its order. The fields
+   * the tenant has added come last in their section, and the position's own
+   * questions last of all, under a heading
+   */
   fields: JobApplyField[];
+  /** The form draws fields of the tenant's own: the submission then carries the mark that makes Next read them */
+  hasCustomFields: boolean;
+  /** The first, empty option of a list to choose from */
+  chooseLabel: string;
   cv: JobApplyCv;
   /** The step above the form that reads the CV and fills in the fields. Only when Next has it on and the admin tool shows it */
   cvRead?: JobCvRead;
@@ -97,9 +105,31 @@ export type JobApplyForm = {
 };
 
 export type JobApplyField = {
-  /** The name Next takes. For rows, the key of the group (employments, educations) */
+  /**
+   * The name Next takes. For rows, the key of the group (employments,
+   * educations). For a field of the tenant's own, `cf.<id>`
+   */
   key: string;
-  kind: "text" | "email" | "tel" | "url" | "textarea" | "rows" | "tags";
+  /** For the id attributes: the key, with only letters, digits, - and _ */
+  id: string;
+  /**
+   * `heading` is the heading of a section, not a field. `number`, `select`,
+   * `radio`, `multi` and `checkbox` are only used by the tenant's own fields
+   */
+  kind:
+    | "text"
+    | "email"
+    | "tel"
+    | "url"
+    | "textarea"
+    | "rows"
+    | "tags"
+    | "number"
+    | "select"
+    | "radio"
+    | "multi"
+    | "checkbox"
+    | "heading";
   label: string;
   required: boolean;
   /** Over both columns. The rest share a line two by two, as in Next */
@@ -114,6 +144,14 @@ export type JobApplyField = {
   placeholder?: string;
   row?: JobApplyRow;
   addLabel?: string;
+  /** For `select`, `radio` and `multi`: the value is the id Next takes */
+  options?: { value: string; label: string }[];
+  /** For `text` and `textarea` */
+  maxlength?: number;
+  /** For `number`: the limits as text, and `1` or `any` */
+  min?: string;
+  max?: string;
+  step?: string;
 };
 
 /** One row of work experience or education: two text fields on top, the period below */

@@ -76,6 +76,10 @@
               <input type="hidden" name="positionId" value="${form.positionId}">
               <input type="hidden" name="anchor" value="${form.anchor}">
               <input type="hidden" name="startedAt" value="${form.startedAt}">
+              [#if form.hasCustomFields]
+                [#-- The form draws the tenant's own fields: with the mark, Next reads them and holds the required ones --]
+                <input type="hidden" name="customFields" value="1">
+              [/#if]
 
               [#assign cvError = (form.errorField!"") == "cv"]
               [#if form.cvRead?has_content]
@@ -174,7 +178,7 @@
 
                 <div class="next-jobs-form--grid">
                   [#list form.fields as field]
-                    [#assign fieldId = "${prefix}-${field.key}"]
+                    [#assign fieldId = "${prefix}-${field.id}"]
                     [#assign hasError = (form.errorField!"") == field.key]
                     [#assign describedBy = field.help?has_content?then("${fieldId}-help ", "") + "${fieldId}-error"]
                     [#assign fieldClass = field.wide?then(" next-jobs-form--wide", "")]
@@ -239,6 +243,48 @@
                         <button class="next-jobs-form--add" type="button" data-add-row hidden>${field.addLabel}</button>
                         <p class="next-jobs-form--error" id="${fieldId}-error"[#if !hasError] hidden[/#if]>[#if hasError]${form.errorText!}[/#if]</p>
                       </fieldset>
+                    [#elseif field.kind == "heading"]
+                      [#-- The position's own questions, under the heading Next gives the section --]
+                      <h3 class="next-jobs-form--subheading next-jobs-form--wide">${field.label}</h3>
+                    [#elseif field.kind == "radio" || field.kind == "multi"]
+                      [#-- One of the options, or several: the question is the legend, so it is read with each option --]
+                      <fieldset class="next-jobs-form--choices${fieldClass}" data-field="${field.key}" aria-describedby="${describedBy}">
+                        <legend class="next-jobs-form--label">${field.label}[#if field.required]<span aria-hidden="true"> *</span>[/#if]</legend>
+                        [#list field.options as option]
+                          <label class="next-jobs-form--choice">
+                            [#-- A required group of checkboxes can't be said in HTML: Next turns the application down, and names the field --]
+                            <input
+                              type="[#if field.kind == "radio"]radio[#else]checkbox[/#if]"
+                              name="${field.key}"
+                              value="${option.value}"
+                              [#if field.kind == "radio" && field.required]required[/#if]
+                              [#if hasError && option?is_first]aria-invalid="true"[/#if]>
+                            <span>${option.label}</span>
+                          </label>
+                        [/#list]
+                        [#if field.help?has_content]
+                          <p class="next-jobs-form--help" id="${fieldId}-help">${field.help}</p>
+                        [/#if]
+                        <p class="next-jobs-form--error" id="${fieldId}-error"[#if !hasError] hidden[/#if]>[#if hasError]${form.errorText!}[/#if]</p>
+                      </fieldset>
+                    [#elseif field.kind == "checkbox"]
+                      <div class="next-jobs-form--field${fieldClass}" data-field="${field.key}">
+                        <div class="next-jobs-form--check">
+                          <input
+                            id="${fieldId}"
+                            name="${field.key}"
+                            type="checkbox"
+                            value="on"
+                            aria-describedby="${describedBy}"
+                            [#if field.required]required[/#if]
+                            [#if hasError]aria-invalid="true"[/#if]>
+                          <label for="${fieldId}">${field.label}[#if field.required]<span aria-hidden="true"> *</span>[/#if]</label>
+                        </div>
+                        [#if field.help?has_content]
+                          <p class="next-jobs-form--help" id="${fieldId}-help">${field.help}</p>
+                        [/#if]
+                        <p class="next-jobs-form--error" id="${fieldId}-error"[#if !hasError] hidden[/#if]>[#if hasError]${form.errorText!}[/#if]</p>
+                      </div>
                     [#else]
                       <div class="next-jobs-form--field${fieldClass}" data-field="${field.key}">
                         <label class="next-jobs-form--label" for="${fieldId}">${field.label}[#if field.required]<span aria-hidden="true"> *</span>[/#if]</label>
@@ -249,8 +295,22 @@
                             name="${field.key}"
                             rows="5"
                             aria-describedby="${describedBy}"
+                            [#if field.maxlength?has_content]maxlength="${field.maxlength?c}"[/#if]
                             [#if field.required]required[/#if]
                             [#if hasError]aria-invalid="true"[/#if]></textarea>
+                        [#elseif field.kind == "select"]
+                          <select
+                            class="next-jobs-form--input"
+                            id="${fieldId}"
+                            name="${field.key}"
+                            aria-describedby="${describedBy}"
+                            [#if field.required]required[/#if]
+                            [#if hasError]aria-invalid="true"[/#if]>
+                            <option value="">${form.chooseLabel}</option>
+                            [#list field.options as option]
+                              <option value="${option.value}">${option.label}</option>
+                            [/#list]
+                          </select>
                         [#elseif field.kind == "tags"]
                           [#-- A comma list without the script. With it, each value is a tag with a hidden field --]
                           <div class="next-jobs-form--tags" data-tags="${field.key}" data-remove-label="${field.removeTag!}">
@@ -274,6 +334,10 @@
                             [#if field.autocomplete?has_content]autocomplete="${field.autocomplete}"[/#if]
                             [#if field.inputmode?has_content]inputmode="${field.inputmode}"[/#if]
                             [#if field.placeholder?has_content]placeholder="${field.placeholder}"[/#if]
+                            [#if field.maxlength?has_content]maxlength="${field.maxlength?c}"[/#if]
+                            [#if field.min?has_content]min="${field.min}"[/#if]
+                            [#if field.max?has_content]max="${field.max}"[/#if]
+                            [#if field.step?has_content]step="${field.step}"[/#if]
                             [#if field.required]required[/#if]
                             [#if hasError]aria-invalid="true"[/#if]>
                         [/#if]

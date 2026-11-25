@@ -1,9 +1,13 @@
 import { request } from "/lib/http-client";
 import { getConfig } from "./client";
 import type {
+  SiteApplyCustomField,
+  SiteApplyCustomFieldType,
   SiteApplyField,
   SiteApplyFieldKey,
   SiteApplyForm,
+  SiteApplySection,
+  SiteApplySectionKey,
   SiteCvDraft,
   SiteCvEducation,
   SiteCvEmployment,
@@ -196,7 +200,11 @@ export function parseForm(body: string | null | undefined): SiteApplyForm | unde
 
   json.fields.forEach((raw: unknown) => {
     if (isObject(raw) && isFieldKey(raw.key)) {
-      fields.push({ key: raw.key, required: raw.required === true });
+      fields.push({
+        key: raw.key,
+        required: raw.required === true,
+        section: isSectionKey(raw.section) ? raw.section : undefined,
+      });
     }
   });
 
@@ -207,13 +215,124 @@ export function parseForm(body: string | null | undefined): SiteApplyForm | unde
   return {
     positionId: text(json.positionId) ?? "",
     title: text(json.title) ?? "",
+    sections: parseSections(json.sections),
     fields,
+    customFields: parseCustomFields(json.customFields),
     cv: { maxBytes, extensions },
     privacy: { text: privacyText, url: privacyUrl },
     // Without the text there is nothing to consent to, so the checkbox is left out
     talentPool: { text: talentPoolText ?? "", months: typeof months === "number" ? months : 0 },
     cvRead: parseCvRead(json.cvRead),
   };
+}
+
+const SECTION_KEYS: SiteApplySectionKey[] = ["about", "experience", "skills", "position"];
+
+function isSectionKey(value: unknown): value is SiteApplySectionKey {
+  return typeof value === "string" && SECTION_KEYS.indexOf(value as SiteApplySectionKey) !== -1;
+}
+
+function parseSections(raw: unknown): SiteApplySection[] {
+  return list(raw, (item): SiteApplySection | undefined => {
+    const title = isObject(item) ? text(item.title) : undefined;
+
+    return isObject(item) && isSectionKey(item.key) && title ? { key: item.key, title } : undefined;
+  });
+}
+
+const CUSTOM_TYPES: SiteApplyCustomFieldType[] = [
+  "text",
+  "number",
+  "longtext",
+  "radio",
+  "select",
+  "checkbox",
+  "multi",
+  "list",
+];
+const CHOICE_TYPES: SiteApplyCustomFieldType[] = ["radio", "select", "multi"];
+
+/** The name a field of the tenant's own is sent under: `cf.` and the id Next made */
+export function isCustomFieldName(value: unknown): value is `cf.${string}` {
+  return typeof value === "string" && /^cf\.[\w-]{1,60}$/.test(value);
+}
+
+/**
+ * The tenant's own fields, field by field. A field this library can't draw (a
+ * type from a newer Next, a choice without options) is left out. When such a
+ * field is required, all of them are left out: the form then sends no mark,
+ * Next reads none of them, and the application isn't stopped by a question
+ * the candidate never saw
+ */
+export function parseCustomFields(raw: unknown): SiteApplyCustomField[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const fields: SiteApplyCustomField[] = [];
+  let missedRequired = false;
+
+  raw.forEach((item: unknown) => {
+    const field = parseCustomField(item);
+
+    if (field) {
+      fields.push(field);
+    } else if (isObject(item) && item.required === true) {
+      missedRequired = true;
+    }
+  });
+
+  return missedRequired ? [] : fields;
+}
+
+function parseCustomField(raw: unknown): SiteApplyCustomField | undefined {
+  if (!isObject(raw)) {
+    return undefined;
+  }
+
+  const id = text(raw.id);
+  const label = text(raw.label);
+  const type = CUSTOM_TYPES.filter((known) => known === raw.type)[0];
+
+  // The name must be the one made from the id: nothing else is sent on to Next
+  if (!id || !label || !type || raw.name !== `cf.${id}` || !isCustomFieldName(raw.name)) {
+    return undefined;
+  }
+
+  const options = list(raw.options, (item): { id: string; label: string } | undefined => {
+    const optionId = isObject(item) ? text(item.id) : undefined;
+    const optionLabel = isObject(item) ? text(item.label) : undefined;
+
+    return optionId && optionLabel ? { id: optionId, label: optionLabel } : undefined;
+  });
+
+  if (CHOICE_TYPES.indexOf(type) !== -1 && options.length === 0) {
+    return undefined;
+  }
+
+  return {
+    id,
+    name: raw.name,
+    label,
+    help: text(raw.help),
+    type,
+    required: raw.required === true,
+    section: isSectionKey(raw.section) ? raw.section : "about",
+    options: CHOICE_TYPES.indexOf(type) !== -1 ? options : undefined,
+    min: type === "number" ? finite(raw.min) : undefined,
+    max: type === "number" ? finite(raw.max) : undefined,
+    integer: type === "number" ? raw.integer === true : undefined,
+    maxLength: positive(raw.maxLength),
+    maxItems: type === "list" ? positive(raw.maxItems) : undefined,
+  };
+}
+
+function finite(value: unknown): number | undefined {
+  return typeof value === "number" && isFinite(value) ? value : undefined;
+}
+
+function positive(value: unknown): number | undefined {
+  return typeof value === "number" && isFinite(value) && value > 0 ? Math.floor(value) : undefined;
 }
 
 /** File extensions with the dot, in lower case. Anything else is left out */
@@ -445,7 +564,7 @@ export type ApplyPart =
  */
 export type SubmitResult =
   | { status: "received" }
-  | { status: "invalid"; field: SiteApplyFieldKey | "name" | "email"; error: string }
+  | { status: "invalid"; field: SiteApplyFieldKey | "name" | "email" | `cf.${string}`; error: string }
   | { status: "closed" }
   | { status: "tooLarge" }
   | { status: "tooMany" }
@@ -526,7 +645,7 @@ function getInvalid(body: string | null): SubmitResult {
   const field = isObject(json) ? json.field : undefined;
   const error = isObject(json) ? text(json.error) : undefined;
 
-  if (field === "name" || field === "email" || isFieldKey(field)) {
+  if (field === "name" || field === "email" || isFieldKey(field) || isCustomFieldName(field)) {
     return { status: "invalid", field, error: error ?? "" };
   }
 

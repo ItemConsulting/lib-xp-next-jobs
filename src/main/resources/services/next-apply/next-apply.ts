@@ -19,7 +19,11 @@ import type { Request, Response } from "@enonic-types/core";
  * posting (POST-redirect-GET), so a reload doesn't send it again.
  * ========================================================================== */
 
-/** The fields Next takes, with the same names as its own form. Nothing else is sent on */
+/**
+ * The fields Next takes, with the same names as its own form. Nothing else is
+ * sent on, but the fields the tenant has added in Next (`cf.<id>`), whose names
+ * come from Next with the form
+ */
 const TEXT_FIELDS = [
   "name",
   "email",
@@ -46,6 +50,9 @@ const TEXT_FIELDS = [
   "website",
   "startedAt",
 ];
+
+/** Sent by a form that drew the tenant's own fields, and sent on to Next, which then reads them */
+const CUSTOM_MARK = "customFields";
 
 /** What the page is told. The same words go in the query (OUTCOME_PARAM) when the script isn't running */
 export type ApplyOutcome = "received" | "required" | "email" | "cv" | "closed" | "tooLarge" | "tooMany" | "failed";
@@ -114,7 +121,18 @@ function handle(req: Request, positionId: string): Answer {
     return { outcome: "failed" };
   }
 
-  const parts = getTextParts();
+  const parts = getTextParts(TEXT_FIELDS);
+
+  /*
+   * The tenant's own fields, when the page drew them: only the names Next
+   * gave for this position, and the mark that makes Next read them. Without
+   * the mark from the page (a form drawn before the fields came) none are
+   * sent, and Next lets the application through without them
+   */
+  if (form.status === "ok" && form.form.customFields.length > 0 && getText(CUSTOM_MARK) === "1") {
+    parts.push({ name: CUSTOM_MARK, value: "1" });
+    getTextParts(form.form.customFields.map((field) => field.name)).forEach((part) => parts.push(part));
+  }
 
   if (cv) {
     parts.push(cv);
@@ -132,12 +150,12 @@ function toAnswer(result: SubmitResult): Answer {
   }
 }
 
-/** Every value of the known fields, in the order they came. Repeated names (rows, tags) stay repeated */
-function getTextParts(): ApplyPart[] {
+/** Every value of the fields named, in the order they came. Repeated names (rows, tags, options) stay repeated */
+function getTextParts(names: string[]): ApplyPart[] {
   const form = getMultipartForm();
   const parts: ApplyPart[] = [];
 
-  TEXT_FIELDS.forEach((name) => {
+  names.forEach((name) => {
     const items = form[name];
     const count = Array.isArray(items) ? items.length : items ? 1 : 0;
 

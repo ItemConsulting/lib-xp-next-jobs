@@ -115,18 +115,94 @@ export type SiteApplyFieldKey =
   | "languages"
   | "certifications";
 
+/**
+ * The sections of the form, in this order: `about` (name and email are always
+ * there), `experience`, `skills` and `position` (the position's own questions:
+ * only `customFields` are there)
+ */
+export type SiteApplySectionKey = "about" | "experience" | "skills" | "position";
+
+export interface SiteApplySection {
+  key: SiteApplySectionKey;
+  /** The heading, translated, as the form in Next shows it */
+  title: string;
+}
+
 export interface SiteApplyField {
   key: SiteApplyFieldKey;
   /** Must be filled in. Otherwise the submission is turned down with `err.required.<key>` */
   required: boolean;
+  /** The section the field is in. Left out by a Next from before the sections */
+  section?: SiteApplySectionKey;
+}
+
+/**
+ * The types a field of the tenant's own can have, and how the answer is sent
+ * under `name`:
+ * - `text`, `longtext`: the text
+ * - `number`: the number as text. Comma and dot are both taken
+ * - `radio`, `select`: the id of one of `options`
+ * - `checkbox`: `on` when checked. Otherwise the field isn't sent
+ * - `multi`: one field per chosen option, with its id
+ * - `list`: one field per value (tags, as `skills`)
+ */
+export type SiteApplyCustomFieldType =
+  | "text"
+  | "number"
+  | "longtext"
+  | "radio"
+  | "select"
+  | "checkbox"
+  | "multi"
+  | "list";
+
+/**
+ * A field the tenant has added: one of its own candidate fields, or one of the
+ * position's own questions (`section: "position"`). Unlike the fixed fields,
+ * the label comes from Next, since the site can't know it
+ */
+export interface SiteApplyCustomField {
+  /** The id of the field in Next. Stays when the label changes */
+  id: string;
+  /** The name the answer is sent under (`cf.<id>`) */
+  name: string;
+  /** What the candidate reads. One text, whatever the language */
+  label: string;
+  help?: string;
+  type: SiteApplyCustomFieldType;
+  /** Must be answered. For `checkbox`: must be checked */
+  required: boolean;
+  section: SiteApplySectionKey;
+  /** For `radio`, `select` and `multi` */
+  options?: { id: string; label: string }[];
+  /** For `number` */
+  min?: number;
+  max?: number;
+  integer?: boolean;
+  /** For `text` and `longtext`: the longest answer. For `list`: the longest value */
+  maxLength?: number;
+  /** For `list`: the most values */
+  maxItems?: number;
 }
 
 /** The answer from `GET /stillinger/{id}/skjema` */
 export interface SiteApplyForm {
   positionId: string;
   title: string;
+  /** The sections with something in them, in Next's order. Empty from a Next from before the sections */
+  sections: SiteApplySection[];
   /** In the order the form in Next shows them. Hidden fields are left out */
   fields: SiteApplyField[];
+  /**
+   * The fields the tenant has added, in the order they are shown: last in
+   * their section, after the fixed fields there. Empty when there are none.
+   *
+   * A site that draws them says so in the submission with `customFields=1`.
+   * Then the answers are read, and a required one without an answer turns the
+   * application down with `field: "cf.<id>"`. Without the mark none of them
+   * are read, and none of them stop the application
+   */
+  customFields: SiteApplyCustomField[];
   /** The CV is optional. A file outside the limits isn't stored, but doesn't stop the application */
   cv: {
     maxBytes: number;

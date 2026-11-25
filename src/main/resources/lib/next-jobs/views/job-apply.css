@@ -299,6 +299,47 @@ textarea.next-jobs-form--input {
   padding-block: 12px;
 }
 
+/* The tenant's own fields: a heading over the position's questions, and radio buttons or checkboxes under a question */
+
+.next-jobs-form--subheading {
+  margin: 8px 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.next-jobs-form--choices {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  gap: 2px;
+
+  .next-jobs-form--label {
+    margin-bottom: 4px;
+  }
+}
+
+/* A whole line to press on, 44 px high */
+
+.next-jobs-form--choice {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--next-jobs-form--text);
+  cursor: pointer;
+  gap: 10px;
+
+  input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+}
+
 /* Smaller in Next: the month and year in the rows */
 
 .next-jobs-form--select {

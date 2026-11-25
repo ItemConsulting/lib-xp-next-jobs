@@ -142,6 +142,10 @@ Put «Job openings from Next» (`next-jobs-list`) on a page, and «Application f
 the same page to take applications there. Each card links to the posting on the same page (`?stilling=<id>`), with
 the form under it. Without the form part, the posting ends with a button to the form in Next.
 
+Which fields the form has is set in Next: the fixed ones under «Felter i bruk», the tenant's own under «Egne
+kandidatfelter», and a position's own questions on the position. The form draws them all, and a change in Next
+shows within a minute.
+
 The parts load the stylesheet and the script themselves. The list finds the form among the page's own components: a
 form that comes from a page template or a fragment isn't found, and the posting then also has the button to Next.
 

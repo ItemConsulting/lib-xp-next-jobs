@@ -141,6 +141,7 @@ export interface SiteApplyField {
  * under `name`:
  * - `text`, `longtext`: the text
  * - `number`: the number as text. Comma and dot are both taken
+ * - `date`: a date as `YYYY-MM-DD`, as `<input type="date">` sends it
  * - `radio`, `select`: the id of one of `options`
  * - `checkbox`: `on` when checked. Otherwise the field isn't sent
  * - `multi`: one field per chosen option, with its id
@@ -150,6 +151,7 @@ export type SiteApplyCustomFieldType =
   | "text"
   | "number"
   | "longtext"
+  | "date"
   | "radio"
   | "select"
   | "checkbox"
@@ -179,6 +181,9 @@ export interface SiteApplyCustomField {
   min?: number;
   max?: number;
   integer?: boolean;
+  /** For `date`: the first and the last day Next takes, `YYYY-MM-DD`. A date outside counts as no answer */
+  minDate?: string;
+  maxDate?: string;
   /** For `text` and `longtext`: the longest answer. For `list`: the longest value */
   maxLength?: number;
   /** For `list`: the most values */

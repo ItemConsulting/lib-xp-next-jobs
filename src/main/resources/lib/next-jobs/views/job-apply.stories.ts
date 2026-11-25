@@ -166,6 +166,14 @@ const application: JobApplication = {
         ],
       },
       {
+        key: "cf.f_start",
+        id: "cf-f_start",
+        kind: "date",
+        label: "Når kan du begynne?",
+        required: false,
+        wide: false,
+      },
+      {
         key: "cf.f_lonn",
         id: "cf-f_lonn",
         kind: "number",

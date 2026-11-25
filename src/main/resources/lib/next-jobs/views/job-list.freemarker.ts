@@ -13,6 +13,10 @@ export type JobListModel = {
   designStyle?: string;
   /** What a card does under the pointer, when the site has chosen: «animation» or «card». Without it, the view's own */
   designHover?: string;
+  /** What is drawn behind the heading, when the site has chosen: «none», a pattern or «image». Without it, the site's own */
+  designGraphic?: string;
+  /** The address of the image, when the graphic is one. Made by XP, for the branch of the page */
+  graphicImageUrl?: string;
   /** Why the list is empty or old. Only set outside live mode */
   editorNotice?: string;
 

@@ -33,8 +33,18 @@
   --next-jobs-form--card-border: color-mix(in srgb, var(--next-jobs-form--brand) 20%, #ffffff);
   --next-jobs-form--card-padding: 24px;
 
+  /* The same space above and below as the job list, and the same background, when the site has set them */
+  padding-block: min(var(--next-jobs--margin, 0px), 10vw);
+  background-color: var(--next-jobs--background, transparent);
+
   /* The font of the text: the page's own unless the site has set one */
   font-family: var(--next-jobs--font-text, inherit);
+}
+
+/* Right under the job list the two are one surface, with the list's space between them: not twice the margin */
+
+.next-jobs-list + .next-jobs-apply {
+  padding-top: 0;
 }
 
 .next-jobs-apply--surface-white {

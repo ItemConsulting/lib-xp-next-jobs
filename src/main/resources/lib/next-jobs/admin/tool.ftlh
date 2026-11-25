@@ -75,6 +75,62 @@
 [#-- What every control of a setting has. data-saved is what is in use now: the script compares with it --]
 [#macro control name field saved=field.saved]id="tool-${name}" name="${name}" data-saved="${saved}" aria-describedby="tool-${name}-help[#if field.error?has_content] tool-${name}-error[/#if]"[#if field.error?has_content] aria-invalid="true"[/#if][/#macro]
 
+[#-- A row of the look with a slider: a measure that is the site's own when the box is checked --]
+[#macro designRange range]
+  [#local rangeId = "tool-design-${range.key}"]
+  <li class="tool--design-row tool--design-row-wide" data-design-row="${range.key}">
+    <label class="tool--label" for="${rangeId}" id="${rangeId}-label">${range.label}</label>
+    [#-- Named by both texts, so each check box says which value it is for --]
+    <label class="tool--remove tool--design-own">
+      <input
+        class="tool--check"
+        name="own"
+        type="checkbox"
+        value="${range.key}"
+        data-saved="${range.own?c}"
+        aria-labelledby="${rangeId}-own ${rangeId}-label"
+        data-design-own
+        [#if range.own]checked[/#if]>
+      <span id="${rangeId}-own">${design.ownValue}</span>
+    </label>
+    <span class="tool--design-range">
+      <input
+        id="${rangeId}"
+        name="${range.key}"
+        type="range"
+        min="0"
+        max="${range.max}"
+        step="${range.step}"
+        value="${range.value}"
+        data-saved="${range.value}"
+        aria-describedby="${rangeId}-help"
+        data-design-value>
+      <output for="${rangeId}" data-design-range-text data-text="${range.valueText}">${range.text}</output>
+    </span>
+    <span class="tool--check-details tool--design-help" id="${rangeId}-help">${range.help}</span>
+  </li>
+[/#macro]
+
+[#-- A row of the look with a list to choose from --]
+[#macro designChoice choice]
+  [#local choiceId = "tool-design-${choice.key}"]
+  <li class="tool--design-row tool--design-row-wide" data-design-row="${choice.key}">
+    <label class="tool--label" for="${choiceId}">${choice.label}</label>
+    <select
+      class="tool--input tool--select tool--select-wide tool--design-select"
+      id="${choiceId}"
+      name="${choice.key}"
+      data-saved="${choice.value}"
+      aria-describedby="${choiceId}-help"
+      data-design-value>
+      [#list choice.options as option]
+        <option value="${option.value}"[#if option.selected] selected[/#if]>${option.label}</option>
+      [/#list]
+    </select>
+    <span class="tool--check-details tool--design-help" id="${choiceId}-help">${choice.help}</span>
+  </li>
+[/#macro]
+
 <!DOCTYPE html>
 <html lang="${lang}">
 <head>
@@ -748,6 +804,12 @@
       border-bottom: 1px solid var(--tool--border);
     }
 
+    /* The row of the image, while the graphic is something else */
+
+    .tool--design-row[hidden] {
+      display: none;
+    }
+
     .tool--color {
       align-self: start;
       grid-row: 1 / span 2;
@@ -785,7 +847,7 @@
       display: none;
     }
 
-    /* The corners have no color in front: the slider is under the name, as wide as the row */
+    /* A measure has no color in front: the slider is under the name, as wide as the row */
 
     .tool--design-row-wide {
       grid-template-columns: 1fr auto;
@@ -1314,56 +1376,38 @@
           </li>
         [/#list]
 
-        <li class="tool--design-row tool--design-row-wide" data-design-row="radius">
-          <label class="tool--label" for="tool-design-radius" id="tool-design-radius-label">${design.radius.label}</label>
-          <label class="tool--remove tool--design-own">
-            <input
-              class="tool--check"
-              name="own"
-              type="checkbox"
-              value="radius"
-              data-saved="${design.radius.own?c}"
-              aria-labelledby="tool-design-radius-own tool-design-radius-label"
-              data-design-own
-              [#if design.radius.own]checked[/#if]>
-            <span id="tool-design-radius-own">${design.ownValue}</span>
-          </label>
-          <span class="tool--design-range">
-            <input
-              id="tool-design-radius"
-              name="radius"
-              type="range"
-              min="0"
-              max="${design.radius.max}"
-              step="1"
-              value="${design.radius.value}"
-              data-saved="${design.radius.value}"
-              aria-describedby="tool-design-radius-help"
-              data-design-value>
-            <output for="tool-design-radius" data-design-radius-text data-text="${design.radius.valueText}">${design.radius.text}</output>
-          </span>
-          <span class="tool--check-details tool--design-help" id="tool-design-radius-help">${design.radius.help}</span>
-        </li>
+        [#list design.ranges as range]
+          [@designRange range=range /]
+        [/#list]
 
         [#-- The fonts and the effect on the cards. The first choice in each list is the site's own, which stores nothing --]
         [#list design.choices as choice]
-          [#assign choiceId = "tool-design-${choice.key}"]
-          <li class="tool--design-row tool--design-row-wide" data-design-row="${choice.key}">
-            <label class="tool--label" for="${choiceId}">${choice.label}</label>
-            <select
-              class="tool--input tool--select tool--select-wide tool--design-select"
-              id="${choiceId}"
-              name="${choice.key}"
-              data-saved="${choice.value}"
-              aria-describedby="${choiceId}-help"
-              data-design-value>
-              [#list choice.options as option]
-                <option value="${option.value}"[#if option.selected] selected[/#if]>${option.label}</option>
-              [/#list]
-            </select>
-            <span class="tool--check-details tool--design-help" id="${choiceId}-help">${choice.help}</span>
-          </li>
+          [@designChoice choice=choice /]
         [/#list]
+
+        [#-- What is drawn behind the heading: which graphic, the image when it is one, and how much of it shows --]
+        [@designChoice choice=design.graphic /]
+
+        [#-- Only for the graphic that is an image: the script hides the row for the others, and asks for an image for that one --]
+        [#assign imageId = "tool-design-${design.graphicImage.key}"]
+        <li class="tool--design-row tool--design-row-wide" data-design-row="${design.graphicImage.key}" data-design-image>
+          <label class="tool--label" for="${imageId}">${design.graphicImage.label}</label>
+          <select
+            class="tool--input tool--select tool--select-wide tool--design-select"
+            id="${imageId}"
+            name="${design.graphicImage.key}"
+            data-saved="${design.graphicImage.value}"
+            aria-describedby="${imageId}-help ${imageId}-note"
+            data-design-value>
+            [#list design.graphicImage.options as option]
+              <option value="${option.value}"[#if option.url?has_content] data-url="${option.url}"[/#if][#if option.selected] selected[/#if]>${option.label}</option>
+            [/#list]
+          </select>
+          <span class="tool--check-details tool--design-help" id="${imageId}-help">${design.graphicImage.help}</span>
+          <p class="tool--error tool--design-warning" id="${imageId}-note">${design.graphicImage.note!""}</p>
+        </li>
+
+        [@designRange range=design.graphicOpacity /]
       </ul>
 
       <button class="tool--button" type="submit" aria-describedby="tool-design-heading">${save}</button>
@@ -1620,7 +1664,7 @@
       var minContrast = Number(form.getAttribute("data-min-contrast"));
       var warning = form.getAttribute("data-warning");
       var frame = document.querySelector("#tool-preview iframe");
-      var radiusText = form.querySelector("[data-design-radius-text]");
+      var imageRow = form.querySelector("[data-design-image]");
       var WHITE = "#ffffff";
       var DARK = "#1b1b33";
       // Every property the design can set: one that is no longer the site's own is taken away in the preview
@@ -1634,8 +1678,11 @@
         "--next-jobs--muted",
         "--next-jobs--button",
         "--next-jobs--button-text",
+        "--next-jobs--background",
         "--next-jobs--card-radius",
         "--next-jobs--control-radius",
+        "--next-jobs--margin",
+        "--next-jobs--graphic-opacity",
       ];
 
       // The contrast between two #rrggbb colors, from 1 to 21 (WCAG 2.1), as getContrast() in /lib/next-jobs/design.ts
@@ -1671,6 +1718,15 @@
         return row.querySelector("[data-design-value]").value;
       }
 
+      function rowOf(key) {
+        return form.querySelector('[data-design-row="' + key + '"]');
+      }
+
+      // The value of a list. Empty for the site's own, and for a list that isn't there
+      function choiceOf(key) {
+        return rowOf(key) ? valueOf(rowOf(key)) : "";
+      }
+
       // The same list as getDesignVariables() in /lib/next-jobs/design.ts builds: change the two together
       function getVariables() {
         var variables = {};
@@ -1690,9 +1746,15 @@
           } else if (key === "button") {
             variables["--next-jobs--button"] = value;
             variables["--next-jobs--button-text"] = textOn(value);
+          } else if (key === "background") {
+            variables["--next-jobs--background"] = value;
           } else if (key === "radius") {
             variables["--next-jobs--card-radius"] = value + "px";
             variables["--next-jobs--control-radius"] = Math.min(Number(value), 9) + "px";
+          } else if (key === "margin") {
+            variables["--next-jobs--margin"] = value + "px";
+          } else if (key === "graphicOpacity") {
+            variables["--next-jobs--graphic-opacity"] = String(Number(value) / 100);
           } else if (key === "fontTitle") {
             variables["--next-jobs--font-title"] = value;
           } else if (key === "fontText") {
@@ -1716,15 +1778,25 @@
         }
 
         var variables = getVariables();
-        var hoverRow = form.querySelector('[data-design-row="hover"]');
-        var hover = hoverRow ? valueOf(hoverRow) : "";
+        var hover = choiceOf("hover");
+        var graphic = choiceOf("graphic");
 
         Array.prototype.forEach.call(page.querySelectorAll("[data-next-jobs-design]"), function (element) {
-          // The effect on the cards is an attribute, not a property: a view has its rules for each effect
+          // The effect on the cards and the graphic are attributes, not properties: a view has its rules for each
           if (hover) {
             element.setAttribute("data-next-jobs-hover", hover);
           } else {
             element.removeAttribute("data-next-jobs-hover");
+          }
+
+          if (graphic) {
+            element.setAttribute("data-next-jobs-graphic", graphic);
+          } else {
+            element.removeAttribute("data-next-jobs-graphic");
+          }
+
+          if (graphic === "image") {
+            showImage(page, element);
           }
 
           NAMES.forEach(function (name) {
@@ -1737,6 +1809,50 @@
         });
       }
 
+      // The image that is chosen, where the view draws the graphic. The page has the saved image already, at the
+      // address XP made for it: only another image is loaded, from the address the tool has for it under this page
+      function showImage(page, element) {
+        var holder = element.querySelector(".next-jobs-list--graphic");
+        var select = imageRow ? imageRow.querySelector("[data-design-value]") : null;
+        var option = select ? select.options[select.selectedIndex] : null;
+        var url = option ? option.getAttribute("data-url") : null;
+
+        if (!holder || !select || !url) {
+          return;
+        }
+
+        var image = holder.querySelector("img");
+        var shown = image ? image.getAttribute("data-next-jobs-image") : null;
+
+        if (image && shown === null && select.value === select.getAttribute("data-saved")) {
+          return;
+        }
+
+        if (!image) {
+          image = page.createElement("img");
+          image.className = "next-jobs-list--graphic-image";
+          image.alt = "";
+          holder.appendChild(image);
+        }
+
+        if (shown !== select.value) {
+          image.src = url;
+          image.setAttribute("data-next-jobs-image", select.value);
+        }
+      }
+
+      // The image is only asked for while the graphic is one: the row is hidden for the others
+      function showImageRow() {
+        if (!imageRow) {
+          return;
+        }
+
+        var wanted = choiceOf("graphic") === "image";
+
+        imageRow.hidden = !wanted;
+        imageRow.querySelector("[data-design-value]").required = wanted;
+      }
+
       function showWarnings() {
         rows.forEach(function (row) {
           var note = row.querySelector("[data-design-warning]");
@@ -1747,7 +1863,11 @@
 
           var color = valueOf(row);
           var rule = row.querySelector("[data-design-value]").getAttribute("data-contrast");
-          var ratio = contrast(rule === "under-best" ? textOn(color) : WHITE, color);
+          // The text and the links stand on the background, in the colors that are in use: the lowest contrast counts
+          var ratio =
+            rule === "under-text"
+              ? Math.min(contrast(choiceOf("ink") || DARK, color), contrast(choiceOf("accent") || DARK, color))
+              : contrast(rule === "under-best" ? textOn(color) : WHITE, color);
           // One decimal, rounded down, so a contrast just under the limit isn't shown as the limit. A comma in Norwegian
           var text = (Math.floor(ratio * 10) / 10).toFixed(1);
 
@@ -1760,12 +1880,15 @@
       }
 
       function update() {
-        if (radiusText) {
-          radiusText.textContent = radiusText
-            .getAttribute("data-text")
-            .replace("%px%", form.querySelector('[data-design-row="radius"] [data-design-value]').value);
-        }
+        rows.forEach(function (row) {
+          var text = row.querySelector("[data-design-range-text]");
 
+          if (text) {
+            text.textContent = text.getAttribute("data-text").replace("%value%", valueOf(row));
+          }
+        });
+
+        showImageRow();
         showWarnings();
         showInPreview();
       }

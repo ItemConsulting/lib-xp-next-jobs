@@ -44,22 +44,31 @@ import {
   CARD_HOVERS,
   COLOR_KEYS,
   CONTRAST_RULES,
+  DEFAULT_DESIGN,
   FONT_KEYS,
-  MAX_RADIUS,
+  GRAPHICS,
   MIN_CONTRAST,
+  RANGES,
+  RANGE_KEYS,
   SYSTEM_FONTS,
   getContrastInUse,
   normalizeColor,
   normalizeFont,
+  normalizeGraphic,
   normalizeHover,
-  normalizeRadius,
+  normalizeImageId,
+  normalizeRange,
   type CareerDesign,
+  type DesignRangeKey,
 } from "../design";
+import { MAX_IMAGES, findImage, getPreviewGraphicUrl, listImages } from "../images";
 import { listSites, type NextSite } from "../site";
 import type { Request, Response } from "@enonic-types/core";
 import type {
   CareerDesignCard,
   CareerField,
+  CareerImageOption,
+  CareerRange,
   CareerFormChecks,
   CareerNotice,
   CareerOption,
@@ -108,7 +117,8 @@ export type ToolOptions = {
   careerPageQuery: string;
   /**
    * The look of the app's views where a site has set nothing: what the «Utseende» card shows
-   * for a value that isn't the site's own. The colors as `#rrggbb`, the corners in px
+   * for a value that isn't the site's own. The colors as `#rrggbb`, the corners and the margin
+   * in px, how much of the graphic shows in percent
    */
   designDefaults: DesignDefaults;
   /**
@@ -118,8 +128,22 @@ export type ToolOptions = {
   fonts?: { label: string; family: string }[];
 };
 
-/** The values the «Utseende» card shows a default for: the colors and the corners */
-export type DesignDefaults = { brand: string; accent: string; ink: string; button: string; radius: number };
+/**
+ * The values the «Utseende» card shows a default for. Those that can be left out are the same
+ * as in the library's own views (`DEFAULT_DESIGN`) for an app that says nothing else
+ */
+export type DesignDefaults = {
+  brand: string;
+  accent: string;
+  ink: string;
+  button: string;
+  radius: number;
+  /** The color of the page behind the views */
+  background?: string;
+  margin?: number;
+  /** How much of the app's own decoration behind the heading shows, when it reads `--next-jobs--graphic-opacity` */
+  graphicOpacity?: number;
+};
 
 /** Which site the request is for: on the address of a GET, and in a hidden field of every form */
 const SITE_PARAM = "site";
@@ -504,10 +528,12 @@ function saveDesign(req: Request, scope: Scope, site: NextSite): Response {
     }
   });
 
-  if (own.indexOf("radius") !== -1) {
-    design.radius = normalizeRadius(first(req.params.radius));
-    invalid = invalid || design.radius === undefined;
-  }
+  RANGE_KEYS.forEach((key) => {
+    if (own.indexOf(key) !== -1) {
+      design[key] = normalizeRange(key, first(req.params[key]));
+      invalid = invalid || design[key] === undefined;
+    }
+  });
 
   // The lists have an empty choice for the site's own. Anything else must be one of the fonts in the list
   const fonts = getFonts(scope.tool).map((font) => font.family);
@@ -526,6 +552,28 @@ function saveDesign(req: Request, scope: Scope, site: NextSite): Response {
   if (hover !== "") {
     design.hover = normalizeHover(hover);
     invalid = invalid || !design.hover;
+  }
+
+  const graphic = (first(req.params.graphic) ?? "").trim();
+
+  if (graphic !== "") {
+    design.graphic = normalizeGraphic(graphic);
+    invalid = invalid || !design.graphic;
+  }
+
+  if (design.graphic === "image") {
+    const image = normalizeImageId(first(req.params.graphicImage));
+
+    // An image of the site's project that the user can read. The script asks for one before the form is sent
+    if (!image || !findImage(site, image, "draft")) {
+      return page(req, scope, {
+        section: "design",
+        notice: { kind: "error", text: phrase("tool.design.graphicImage.error") },
+        status: 400,
+      });
+    }
+
+    design.graphicImage = image;
   }
 
   // The form's own controls can't send anything else, so this is a request made by hand
@@ -655,7 +703,7 @@ function getBody(req: Request, scope: Scope, site: NextSite, options: PageOption
     displayHeading: phrase("tool.display"),
     displayHelp: phrase("tool.display.help"),
     display: getToggles(site.key),
-    design: getDesignCard(site.key, scope.tool),
+    design: getDesignCard(site, scope.tool, careerPage ? getPreviewSiteUrl(req, site, careerPage) : undefined),
     texts: getTextsCard(site.key, options.texts),
     positionsHeading: phrase("tool.positions"),
     positionsHelp: phrase("tool.positions.help"),
@@ -774,11 +822,13 @@ function getTextsCard(siteKey: string, typed: { values: TextValues; errors: Text
  * set one, otherwise what the app's views have. A warning follows a color of
  * the site's own that text gets hard to read with
  */
-function getDesignCard(siteKey: string, tool: ToolOptions): CareerDesignCard {
-  const design = getCareerDesign(siteKey);
-  const defaults = tool.designDefaults;
+function getDesignCard(site: NextSite, tool: ToolOptions, previewSiteUrl: string | undefined): CareerDesignCard {
+  const design = getCareerDesign(site.key);
+  const defaults = { ...DEFAULT_DESIGN, ...tool.designDefaults };
   const fonts = getFonts(tool);
   const own = phrase("tool.design.choice.own");
+  // The text and the links stand on the background, in the colors that are in use
+  const text = [design.ink ?? defaults.ink, design.accent ?? defaults.accent];
 
   return {
     heading: phrase("tool.design"),
@@ -790,7 +840,7 @@ function getDesignCard(siteKey: string, tool: ToolOptions): CareerDesignCard {
     warning: phrase("tool.design.warning", ["%ratio%"]),
     colors: COLOR_KEYS.map((key) => {
       const own = design[key];
-      const ratio = own ? getContrastInUse(key, own) : undefined;
+      const ratio = own ? getContrastInUse(key, own, text) : undefined;
 
       return {
         key,
@@ -803,16 +853,7 @@ function getDesignCard(siteKey: string, tool: ToolOptions): CareerDesignCard {
           ratio !== undefined && ratio < MIN_CONTRAST ? phrase("tool.design.warning", [formatRatio(ratio)]) : undefined,
       };
     }),
-    radius: {
-      label: phrase("tool.design.radius"),
-      help: phrase("tool.design.radius.help"),
-      own: design.radius !== undefined,
-      value: String(design.radius ?? defaults.radius),
-      max: String(MAX_RADIUS),
-      text: phrase("tool.design.radius.value", [String(design.radius ?? defaults.radius)]),
-      // The script fills in the number as the slider moves
-      valueText: phrase("tool.design.radius.value", ["%px%"]),
-    },
+    ranges: [getRange("radius", design, defaults), getRange("margin", design, defaults)],
     // Each a list with the site's own first. A font that is stored but no longer in the list is shown as the site's own
     choices: [
       ...FONT_KEYS.map((key) => ({
@@ -835,6 +876,76 @@ function getDesignCard(siteKey: string, tool: ToolOptions): CareerDesignCard {
       ...choice,
       options: choice.options.map((option) => ({ ...option, selected: option.value === choice.value })),
     })),
+    graphic: {
+      key: "graphic",
+      label: phrase("tool.design.graphic"),
+      help: phrase("tool.design.graphic.help"),
+      value: design.graphic ?? "",
+      options: [{ value: "", label: own }]
+        .concat(GRAPHICS.map((graphic) => ({ value: graphic, label: phrase(`tool.design.graphic.${graphic}`) })))
+        .map((option) => ({ ...option, selected: option.value === (design.graphic ?? "") })),
+    },
+    graphicImage: getImageChoice(site, design, previewSiteUrl),
+    graphicOpacity: getRange("graphicOpacity", design, defaults),
+  };
+}
+
+/** A slider with the site's own value, or what the app's views have when it has none */
+function getRange(key: DesignRangeKey, design: CareerDesign, defaults: Record<DesignRangeKey, number>): CareerRange {
+  const value = String(design[key] ?? defaults[key]);
+  const unit = key === "graphicOpacity" ? "percent" : "px";
+
+  return {
+    key,
+    label: phrase(`tool.design.${key}`),
+    help: phrase(`tool.design.${key}.help`),
+    own: design[key] !== undefined,
+    value,
+    max: String(RANGES[key].max),
+    step: String(RANGES[key].step),
+    text: phrase(`tool.design.value.${unit}`, [value]),
+    // The script fills in the number as the slider moves
+    valueText: phrase(`tool.design.value.${unit}`, ["%value%"]),
+  };
+}
+
+/**
+ * The images of the site's project to choose the graphic among, the one
+ * changed last first. The chosen one is in the list also when it is older
+ * than those, and a note says when visitors don't get to see it
+ */
+function getImageChoice(
+  site: NextSite,
+  design: CareerDesign,
+  previewSiteUrl: string | undefined,
+): CareerDesignCard["graphicImage"] {
+  const chosenId = design.graphic === "image" ? design.graphicImage : undefined;
+  const chosen = chosenId ? findImage(site, chosenId, "draft") : undefined;
+  const listed = listImages(site);
+  const images =
+    chosen && listed.filter((image) => image.id === chosen.id).length === 0 ? [chosen].concat(listed) : listed;
+  const none: CareerImageOption = { value: "", label: phrase("tool.design.graphicImage.choose"), selected: !chosen };
+
+  return {
+    key: "graphicImage",
+    label: phrase("tool.design.graphicImage"),
+    help: phrase("tool.design.graphicImage.help", [String(MAX_IMAGES)]),
+    value: chosen?.id ?? "",
+    options: [none].concat(
+      images.map((image) => ({
+        value: image.id,
+        label: phrase("tool.design.graphicImage.option", [image.displayName, image.folder]),
+        selected: image.id === chosen?.id,
+        url: previewSiteUrl ? getPreviewGraphicUrl(previewSiteUrl, image) : undefined,
+      })),
+    ),
+    note: !chosenId
+      ? undefined
+      : !chosen
+        ? phrase("tool.design.graphicImage.gone")
+        : !findImage(site, chosen.id, "master")
+          ? phrase("tool.design.graphicImage.unpublished")
+          : undefined,
   };
 }
 
@@ -966,6 +1077,11 @@ function getStatusRows(
  * DENY, so that one is only for the link to a new tab. The admin can be
  * mounted anywhere, so the addresses start from where the tool itself is
  */
+/** The site itself as the frame of the preview is served it: the same mode and the same branch as the career page there */
+function getPreviewSiteUrl(req: Request, site: NextSite, careerPage: CareerPage): string {
+  return `${req.path.split("/tool/")[0]}/site/inline/${careerPage.project}/${careerPage.branch}${site.path}`;
+}
+
 function getPreview(req: Request, careerPage: CareerPage): CareerPreview {
   const adminBase = req.path.split("/tool/")[0];
   const page = `${careerPage.project}/${careerPage.branch}${careerPage.path}`;

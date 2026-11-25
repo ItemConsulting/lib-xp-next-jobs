@@ -1,6 +1,7 @@
 import { getContent, pageUrl } from "/lib/xp/portal";
 import { render } from "/lib/freemarker";
-import { getDesignHover, toDesignStyle } from "../design";
+import { getDesignGraphic, getDesignHover, toDesignStyle, type CareerDesign } from "../design";
+import { getGraphicUrl } from "../images";
 import { getCareerDesign, getCareerDisplay, getCareerSettings, getCareerTexts, type CareerDisplay } from "../settings";
 import { getPositions, type JobListStatus } from "../client";
 import { formatDate } from "../dates";
@@ -67,6 +68,7 @@ export function getJobListModel(options: JobListOptions): JobListModel {
     buttonClass: options.buttonClass ?? "next-jobs-button",
     designStyle: toDesignStyle(design),
     designHover: getDesignHover(design),
+    ...getGraphic(design),
     // Visitors only see the friendly text. Editors are told why the list is empty or old
     editorNotice: req.mode !== "live" ? getEditorNotice(locale, status) : undefined,
     listLabel: phrase(locale, "jobList.listLabel"),
@@ -111,6 +113,23 @@ export function getJobListModel(options: JobListOptions): JobListModel {
     text: texts.text ?? (options.text?.trim() || undefined),
     positions: shown.map((position, index) => getCard(position, index, { showDeadline: display.deadline }, locale)),
   };
+}
+
+/**
+ * The graphic behind the heading that the site has set. An image that isn't
+ * in the branch of the page (not published, or deleted) gives none, so the
+ * site's own decoration is what a visitor then sees
+ */
+function getGraphic(design: CareerDesign): Pick<JobListModel, "designGraphic" | "graphicImageUrl"> {
+  const graphic = getDesignGraphic(design);
+
+  if (graphic !== "image") {
+    return { designGraphic: graphic };
+  }
+
+  const graphicImageUrl = design.graphicImage ? getGraphicUrl(design.graphicImage) : undefined;
+
+  return graphicImageUrl ? { designGraphic: graphic, graphicImageUrl } : {};
 }
 
 /** The page the list is on, with the given query parameters only */

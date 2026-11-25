@@ -1,6 +1,6 @@
 import { query } from "/lib/xp/content";
 import { run } from "/lib/xp/context";
-import type { NextSite } from "./site";
+import { PROJECT_REPO_PREFIX, type NextSite } from "./site";
 
 /* ============================================================================
  * Finds the pages that can be the career page of a site: the content with the
@@ -11,9 +11,6 @@ import type { NextSite } from "./site";
  * finds its pages. A page is listed once: as published when it is, otherwise
  * as the draft.
  * ========================================================================== */
-
-/** The repository of a content project is named after it */
-const PROJECT_REPO_PREFIX = "com.enonic.cms.";
 
 /** More pages than this with the component isn't expected in a project. The rest are left out of the choice */
 const MAX_PAGES = 200;

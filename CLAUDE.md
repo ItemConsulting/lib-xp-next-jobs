@@ -36,8 +36,8 @@ Run `npm run check` before you say a change is done. Prettier requires LF line e
 ```
 src/main/resources/
   lib/next-jobs/             client.ts and apply.ts call Next. settings.ts stores what a site has set. site.ts
-                             finds the site of a request. design.ts is the look a site can set. types.ts mirrors
-                             Next's contract
+                             finds the site of a request. design.ts is the look a site can set, and images.ts
+                             the images that can be its graphic. types.ts mirrors Next's contract
   lib/next-jobs/views/       The list, the posting and the form: model (.ts), view (.ftlh), stylesheet (.css) and
                              story (.stories.ts, which nothing here runs yet). next-jobs.css is all the stylesheets
   lib/next-jobs/admin/       The admin tool: tool.ts and tool.ftlh, and who gets in (access.ts)
@@ -79,8 +79,10 @@ src/main/resources/
   plain-text field. The formatted description is drawn by the view from its structure.
 - **The look goes through `--next-jobs--*`** (`design.ts`). The stylesheets in `views/` read them with plain values as
   the fallbacks (`DEFAULT_DESIGN`): a color or measure that should follow the site is one of these properties, not a
-  new literal. Only `#rrggbb`, whole numbers, font names without quotes and the known effects are written into a
-  style attribute. `getDesignVariables()` and the script in `tool.ftlh` build the same list; change both.
+  new literal. Only `#rrggbb`, whole numbers (the share of the graphic as a hundredth of one), font names without
+  quotes and the known effects and graphics are written into a style or another attribute. The image of a graphic is
+  stored as a content id: its address is made by XP when the page is drawn (`images.ts`) and goes into `src`, never
+  into a style. `getDesignVariables()` and the script in `tool.ftlh` build the same list; change both.
 - **Names start with `next-jobs`**: classes, custom properties, the custom element, assets, log lines.
 - **Two languages.** Add a text to `next-jobs.properties` (Norwegian) and to `next-jobs_en.properties`, where a
   straight apostrophe is written `’` (Java's MessageFormat reads `'` as a quote). The views take the language of the

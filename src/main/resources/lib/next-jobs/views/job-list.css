@@ -24,6 +24,13 @@
 
   container-type: inline-size;
 
+  /*
+   * The space above and below, inside the background when the site has set one. Never more than a tenth of the
+   * window, so a wide margin doesn't fill a phone
+   */
+  padding-block: min(var(--next-jobs--margin, 0px), 10vw);
+  background-color: var(--next-jobs--background, transparent);
+
   /* The font of the text, and under it of the titles: the page's own unless the site has set one */
   font-family: var(--next-jobs--font-text, inherit);
 
@@ -53,7 +60,85 @@
   isolation: isolate;
 }
 
-/* Above what a site draws behind the heading */
+/*
+ * The site's own decoration behind the heading, as large as the surface. --next-jobs--graphic-opacity is how much of
+ * it shows: all of it unless the site says less. A graphic set in the admin tool takes its place, «none» included
+ */
+
+.next-jobs-list--own-graphic {
+  position: absolute;
+  inset: 0;
+  opacity: var(--next-jobs--graphic-opacity, 1);
+}
+
+.next-jobs-list[data-next-jobs-graphic] .next-jobs-list--own-graphic {
+  display: none;
+}
+
+/*
+ * The graphic set in the admin tool: a pattern drawn here in the color of the text on the surface, or an image.
+ * --next-jobs--graphic-opacity is how much of it shows
+ */
+
+.next-jobs-list--graphic {
+  display: none;
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  opacity: var(--next-jobs--graphic-opacity, 0.55);
+  pointer-events: none;
+}
+
+.next-jobs-list:is([data-next-jobs-graphic="dots"], [data-next-jobs-graphic="lines"], [data-next-jobs-graphic="grid"], [data-next-jobs-graphic="rings"], [data-next-jobs-graphic="image"]) .next-jobs-list--graphic {
+  display: block;
+}
+
+.next-jobs-list[data-next-jobs-graphic="dots"] .next-jobs-list--graphic {
+  background-image: radial-gradient(circle, currentcolor 1.5px, transparent 2.5px);
+  background-size: 22px 22px;
+}
+
+.next-jobs-list[data-next-jobs-graphic="lines"] .next-jobs-list--graphic {
+  background-image: repeating-linear-gradient(135deg, currentcolor 0, currentcolor 1px, transparent 2px, transparent 18px);
+}
+
+.next-jobs-list[data-next-jobs-graphic="grid"] .next-jobs-list--graphic {
+  background-image: linear-gradient(currentcolor 1px, transparent 1px), linear-gradient(90deg, currentcolor 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Rings from the corner at the top, away from the text */
+
+.next-jobs-list[data-next-jobs-graphic="rings"] .next-jobs-list--graphic {
+  background-image: repeating-radial-gradient(circle at 100% 0, transparent 0, transparent 38px, currentcolor 39px, currentcolor 40px, transparent 41px);
+}
+
+.next-jobs-list--graphic-image {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.next-jobs-list[data-next-jobs-graphic="image"] .next-jobs-list--graphic-image {
+  display: block;
+}
+
+/*
+ * A veil in the primary color over the graphic where the text is, so the text has its contrast however much of the
+ * graphic shows
+ */
+
+.next-jobs-list:is([data-next-jobs-graphic="dots"], [data-next-jobs-graphic="lines"], [data-next-jobs-graphic="grid"], [data-next-jobs-graphic="rings"], [data-next-jobs-graphic="image"]) .next-jobs-list--hero::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(var(--next-jobs-list--veil-direction, 90deg), color-mix(in srgb, var(--next-jobs-list--brand) 90%, transparent), color-mix(in srgb, var(--next-jobs-list--brand) 55%, transparent) 45%, transparent 75%);
+  pointer-events: none;
+}
+
+/* Above what is drawn behind the heading */
 
 .next-jobs-list--hero-text {
   display: flex;
@@ -401,6 +486,9 @@
   }
 
   .next-jobs-list--hero {
+    /* The text is at the bottom, so the veil over a graphic is too */
+    --next-jobs-list--veil-direction: 0deg;
+
     min-height: 265px;
     padding: var(--next-jobs-list--gap) 16px;
   }

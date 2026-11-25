@@ -204,9 +204,16 @@ export type CareerDesignCard = {
   /** The warning, with %ratio% for the script to fill in */
   warning: string;
   colors: CareerColor[];
-  radius: CareerRadius;
+  /** The corners and the margin: each a slider */
+  ranges: CareerRange[];
   /** The fonts and the effect on the cards: each a list to choose from, with the site's own first */
   choices: CareerChoice[];
+  /** What is drawn behind the heading: the site's own, nothing, a pattern or an image */
+  graphic: CareerChoice;
+  /** Which image, when the graphic is one */
+  graphicImage: CareerImageChoice;
+  /** How much of the graphic shows */
+  graphicOpacity: CareerRange;
 };
 
 export type CareerChoice = {
@@ -217,6 +224,22 @@ export type CareerChoice = {
   /** What is chosen now. Empty for the site's own */
   value: string;
   options: CareerOption[];
+};
+
+export type CareerImageChoice = {
+  key: string;
+  label: string;
+  help: string;
+  /** The id of the image that is chosen. Empty when none is */
+  value: string;
+  options: CareerImageOption[];
+  /** That visitors don't see the chosen image, and why. Only set then */
+  note?: string;
+};
+
+export type CareerImageOption = CareerOption & {
+  /** The address of the image under the page in the preview, for the script to show it there before it is saved */
+  url?: string;
 };
 
 export type CareerColor = {
@@ -234,17 +257,21 @@ export type CareerColor = {
   warning?: string;
 };
 
-export type CareerRadius = {
+export type CareerRange = {
+  /** The name of the value in the settings and in the form */
+  key: string;
   label: string;
   help: string;
   /** The value is the site's own */
   own: boolean;
-  /** In px: the site's own value, or what the app's views have when it has none */
+  /** The site's own value, or what the app's views have when it has none. In px, or in percent */
   value: string;
   max: string;
+  /** How far one step of the slider goes */
+  step: string;
   /** The value with its unit, as it is now */
   text: string;
-  /** The same with %px% for the script to fill in */
+  /** The same with %value% for the script to fill in */
   valueText: string;
 };
 

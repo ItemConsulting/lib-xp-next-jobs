@@ -9,6 +9,8 @@
 [#-- @ftlvariable name="readMore" type="String" --]
 [#-- @ftlvariable name="designStyle" type="String" --]
 [#-- @ftlvariable name="designHover" type="String" --]
+[#-- @ftlvariable name="designGraphic" type="String" --]
+[#-- @ftlvariable name="graphicImageUrl" type="String" --]
 [#-- @ftlvariable name="editorNotice" type="String" --]
 [#-- @ftlvariable name="positions" type="java.util.ArrayList" --]
 [#-- @ftlvariable name="detail" type="Object" --]
@@ -33,11 +35,22 @@
   [#-- The colors and corners the site has set in the admin tool. Its preview sets them on the element with the mark --]
   data-next-jobs-design
   [#if designHover?has_content]data-next-jobs-hover="${designHover}"[/#if]
+  [#if designGraphic?has_content]data-next-jobs-graphic="${designGraphic}"[/#if]
   [#if designStyle?has_content]style="${designStyle}"[/#if]>
 
   <div class="next-jobs-list--hero">
-    [#-- The site's own decoration, behind the heading --]
-    [#nested]
+    [#--
+      The site's own decoration, behind the heading. Always here, and hidden by the stylesheet when a graphic is set
+      in the admin tool, so the tool's preview can go back to it
+    --]
+    <div class="next-jobs-list--own-graphic">[#nested]</div>
+
+    [#-- The graphic set in the admin tool: a pattern the stylesheet draws, or an image. Decorative --]
+    <div class="next-jobs-list--graphic" aria-hidden="true">
+      [#if graphicImageUrl?has_content]
+        <img class="next-jobs-list--graphic-image" src="${graphicImageUrl}" alt="" decoding="async">
+      [/#if]
+    </div>
 
     <div class="next-jobs-list--inner next-jobs-list--hero-text">
       <${headingTag} class="next-jobs-list--heading" id="${id}-heading">${title}</${headingTag}>

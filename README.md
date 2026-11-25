@@ -107,7 +107,8 @@ const options: ToolOptions = {
   title: "Next jobs",
   // The content query that finds the pages with the list of positions: here, those with the library's part
   careerPageQuery: LIST_PART_QUERY,
-  // What the «Utseende» card shows for a value the site hasn't set
+  // What the «Utseende» card shows for a value the site hasn't set. An app with a look of its own gives its
+  // colors and corners here, and can leave out `background`, `margin` and `graphicOpacity`
   designDefaults: DEFAULT_DESIGN,
 };
 
@@ -127,8 +128,8 @@ decides where the key is sent, so the two stay with the administrators. A user w
 
 **What it sets**, for one site at a time: the address and the key, how many positions the list shows, which positions
 are hidden and their order, which page is the career page, what is shown of a position, the heading and text above
-the list, and the look. It follows the language of the browser: Norwegian for someone who asks for it, otherwise
-English.
+the list, and the look: the colors, the corners, the margin, the fonts, the effect on the cards and the graphic
+behind the heading. It follows the language of the browser: Norwegian for someone who asks for it, otherwise English.
 
 The settings are stored in the repository `<app name>.next-jobs`, one node for each site, closed to everyone but
 `system.admin`. A key pasted into the tool is stored there as it is, so it is part of dumps and exports of that
@@ -171,7 +172,9 @@ const form = renderJobApply({ req, locale: "no", rootClass: "my-job-form", butto
 
 `rootClass` and `buttonClass` are classes of the app's own. For something behind the heading of the list, such as an
 image or an animation, the app's view imports the macro in `lib/next-jobs/views/job-list-macro.ftlh`, puts its markup
-between the tags, and is drawn with the model from `getJobListModel()`.
+between the tags, and is drawn with the model from `getJobListModel()`. The markup lands in a box as large as the
+surface behind the heading (`.next-jobs-list--own-graphic`), which takes `--next-jobs--graphic-opacity` and is hidden
+when a site chooses another graphic in the admin tool.
 
 A component of the app's own doesn't bring the stylesheet and the script along, as the parts do. Either add
 `getPageContributions()` from `/lib/next-jobs/views/assets` to the response of the page, or build the two into the
@@ -205,11 +208,23 @@ go before the stylesheet's):
 | `--next-jobs--accent`, `--next-jobs--focus` | Links and small details, and the focus mark |
 | `--next-jobs--ink`, `--next-jobs--muted` | The text, and the muted text |
 | `--next-jobs--button`, `--next-jobs--button-text` | The background of the buttons, and the text on them |
+| `--next-jobs--background` | The surface behind the list, the posting and the form. Without it, the page's own shows through |
 | `--next-jobs--card-radius`, `--next-jobs--control-radius` | The corners of cards and panels, and of the fields |
+| `--next-jobs--margin` | The space above and below the list and the form, inside the background. Never more than a tenth of the window |
+| `--next-jobs--graphic-opacity` | How much of the graphic behind the heading shows, from 0 to 1: the app's own decoration, a pattern or an image |
 | `--next-jobs--font-title`, `--next-jobs--font-text` | The fonts of the titles and of the text |
 | `--next-jobs--space`, `--next-jobs--space-wide` | The space between the parts of a posting and of the form |
 | `--next-jobs--side`, `--next-jobs--max-width` | For a list that goes out to the edges of the page: the space at the sides, and the widest the surface, the text and the cards get (1200 px without it) |
 | `--next-jobs--scroll-offset` | The height of a menu that stays at the top, so the receipt after an application isn't hidden behind it |
+
+The graphic behind the heading is chosen in the tool: the app's own decoration, nothing, one of four patterns the
+stylesheet draws (dots, slanted lines, a grid, rings), or an image from the site's content project. The choice is the
+attribute `data-next-jobs-graphic` on the same element. An image is stored as the id of its content, among the 200
+images changed last, and must be published for visitors to see it: until then they get the app's own decoration.
+Only content of the type `media:image` can be chosen, not a drawing (`media:vector`). A veil in the primary color
+lies over a pattern or an image where the text is.
+
+When the form is the element right after the list, the two share the margin between them.
 
 ## Languages
 

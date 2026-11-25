@@ -16,7 +16,7 @@ import { list as listRepos } from "/lib/xp/repo";
  * ========================================================================== */
 
 /** The repository of a content project is named after it */
-const PROJECT_REPO_PREFIX = "com.enonic.cms.";
+export const PROJECT_REPO_PREFIX = "com.enonic.cms.";
 
 /** More sites than this with the app isn't expected. The rest are left out of the choice */
 const MAX_SITES = 100;
